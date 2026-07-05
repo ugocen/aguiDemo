@@ -4,6 +4,7 @@
       "Bash(pytest:*)",
       "Bash(python scripts/smoke_e2e.py)",
       "Bash(python -m pytest:*)",
+      "Bash(bash scripts/check_env.sh)",
       "Bash(ruff:*)",
       "Bash(uvicorn:*)",
       "Bash(npm run typecheck)",
@@ -17,6 +18,19 @@
       "Bash(curl localhost:*)",
       "Bash(curl -s localhost:*)"
     ],
-    "deny": []
+    "deny": [
+      "Bash(sudo:*)",
+      "Bash(npm install -g:*)",
+      "Bash(npm i -g:*)",
+      "Bash(npm install --global:*)",
+      "Bash(pnpm add -g:*)",
+      "Bash(yarn global:*)",
+      "Bash(pip install --user:*)",
+      "Bash(pip3 install --user:*)",
+      "Bash(pipx install:*)",
+      "Bash(brew install:*)",
+      "Bash(apt-get install:*)",
+      "Bash(apt install:*)"
+    ]
   }
 }

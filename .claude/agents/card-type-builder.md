@@ -8,6 +8,10 @@ You add a new AG-UI card/message type to this repo, following the established
 pattern exactly. Read `AGENTS.md` and `resources/HANDOFF.md` first if you lack
 context.
 
+Never install anything globally: use the Python virtualenv `backend/.venv` and
+the project-local `frontend/node_modules` only — no `sudo`, no `pip install`
+global/`--user`, no `npm install -g`.
+
 A card type named `renderThing` requires all of these, kept consistent:
 
 1. **Backend catalog** — `backend/app/agui/catalog.py`: add a `THING_TOOL`

@@ -18,7 +18,9 @@ Frontend (from `frontend/`):
 - `npm run lint`
 - `npm run build`
 
-If `node_modules` is missing, run `npm install --legacy-peer-deps` first.
+If `node_modules` is missing, run `npm install --legacy-peer-deps` first (local
+install only). Never install anything globally or with `sudo`; use `backend/.venv`
+and `frontend/node_modules` only.
 
 Report a compact table: each check, ok/FAIL, and for any failure the exact error
 lines (not the whole log). Conclude with an overall PASS or FAIL. Note anything

@@ -10,6 +10,9 @@ You add a new scenario agent to the `agents/` package. Read one existing agent
 A scenario agent is a scripted async generator that yields semantic events from
 `app.agent.events`; it never emits protocol events (the translator does that).
 
+Never install anything globally: use `backend/.venv` and `frontend/node_modules`
+only — no `sudo`, no global/`--user` `pip install`, no `npm install -g`.
+
 Steps:
 1. Create `agents/<name>.py` with a class exposing `id`, `name`, `description`,
    `mode = "scenario"`, and `async def run(self, input) -> AsyncIterator[AgentEvent]`.
