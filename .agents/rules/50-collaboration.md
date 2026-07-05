@@ -1,14 +1,13 @@
 # Collaboration protocol — pull before, log and push after
 
-More than one agent may work this repo in parallel (Claude Code, Antigravity, …).
-Always:
+More than one agent may work `main` in parallel (Claude Code, Antigravity, …).
 
-- **Before starting a task:** `git pull` on `main`, review the incoming changes,
-  and read the newest entries in the work log at the end of
-  `resources/HANDOFF.md` (section 11) — what others just did and plan to do.
-- **After finishing a task:** prepend a short entry to that work log — your
-  session identity (e.g. `Claude-Session: …` or `Antigravity-Session: …`), what
-  you did, and what you plan next (if any). Then commit and push to `main`.
-- If the push is rejected because `main` moved, `git pull --rebase` and push
-  again. Work-log conflicts are trivial: keep both entries.
-- Log the **work done**, not the file list (git tracks files).
+- **Before a task:** `git pull`, review the incoming changes, and read the newest
+  entries in the work log at the end of `resources/HANDOFF.md`.
+- **After a task:** run the standard verification and, only if green, prepend a
+  short work-log entry (your tool + session id, what you did, what you plan next)
+  and push to `main`. On push rejection: `git pull --rebase` (keep both work-log
+  entries; never force-push `main`).
+
+The **canonical** steps, conflict handling, and entry format live in that work
+log (HANDOFF, final section). Follow it there — do not restate it here.

@@ -5,7 +5,9 @@ yerden sürdürmek için.
 
 - **`HANDOFF.md`** — ana bootstrap dokümanı: amaç, karar günlüğü (neyi neden
   yaptık), mevcut durum, mimari + uçtan uca akış, repo haritası, çalıştırma ve
-  doğrulama, bilinen tuzaklar, eksikler ve adım adım implementasyon planı.
+  doğrulama, bilinen tuzaklar, eksikler, adım adım implementasyon planı ve son
+  bölümde **çalışma günlüğü (work log) + çoklu-agent işbirliği protokolü**
+  (göreve başlamadan pull + günlüğü oku; görev sonunda doğrula→logla→push).
 - **`CHANGELOG.md`** — şimdiye kadar eklenen her şeyin temalara göre özeti
   (çekirdek, kart tipleri, CopilotKit, senaryo ajanları, multi-vendor LLM, bulut,
   agent tooling, kurallar, dokümantasyon).

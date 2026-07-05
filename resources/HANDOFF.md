@@ -20,6 +20,7 @@
 8. [Eksikler ve yapılacaklar](#8-eksikler-ve-yapılacaklar)
 9. [İmplementasyon planı (kalan işler, adım adım)](#9-i̇mplementasyon-planı)
 10. [Git / branch durumu](#10-git--branch-durumu)
+11. [Çalışma günlüğü (work log)](#11-çalışma-günlüğü-work-log)
 
 ---
 
@@ -457,34 +458,57 @@ git checkout main
 ## 11. Çalışma günlüğü (work log)
 
 Bu repoda aynı anda birden fazla agent çalışabilir (Claude Code, Antigravity…).
-Senkron kalmak için **her agent şu protokolü izler**:
+Bu bölüm işbirliği protokolünün **kanonik kopyasıdır**; `AGENTS.md` ve
+`.agents/rules/50-collaboration.md` yalnızca buraya işaret eder. Work log her
+zaman HANDOFF'un **son bölümüdür**.
 
-- **Her göreve başlamadan önce:** `git pull` (main), gelen değişiklikleri incele
-  ve **bu günlüğün en üstündeki son kayıtları oku** — başkaları ne yaptı ve ne
-  yapmayı planlıyor.
-- **Her görev bittikten sonra:** buraya, **en üste**, kısa bir kayıt ekle
-  (kimliğin + ne yaptığın + varsa sırada ne planladığın), sonra commit edip
-  `main`'e push et. Push reddedilirse `git pull --rebase` yapıp tekrar push et;
-  bu günlükteki çakışma önemsizdir — **iki kaydı da tut**.
-- Dosya listesi yazma (onu git tutuyor); **yapılan işi** yaz.
+**Her göreve başlamadan önce:**
+- `git pull` (main), gelen değişiklikleri incele.
+- Aşağıdaki work log'un **en yeni kayıtlarını** oku — başkaları ne yaptı ve
+  "Sırada" alanında ne planladı. Orada sahiplenilmiş bir işi tekrar başlatma.
+
+**Her görev bittikten sonra:**
+- **Önce doğrula, sonra push:** standart doğrulamayı çalıştır (`pytest -q` +
+  `scripts/smoke_e2e.py`; frontend `typecheck`/`lint`/`build`). **`main`'e yalnız
+  yeşilse push et — asla kırmızı push etme.**
+- Anlamlı bir iş birimi yaptıysan (özellik, düzeltme, senaryo, ya da başkalarının
+  bilmesi gereken bir doküman/protokol değişikliği) aşağıdaki `NEW ENTRIES`
+  işaretinin **hemen altına** kısa bir kayıt ekle. Önemsiz düzeltmeleri loglama;
+  bir sonraki kayda topla.
+- Commit et ve `main`'e push et. (Bu, "sadece istenince push et" kuralının **tek
+  istisnasıdır** — work log her görevden sonra push edilir.)
+
+**Push reddedilirse (main ilerlemişse):**
+- `git pull --rebase`, sonra tekrar push.
+- **Work log çakışması önemsizdir:** her iki kaydı da tut (çakışma işaretlerini
+  sil, sırayı zaman damgasına göre bırak), `git add` + `git rebase --continue`.
+  Asla `--ours`/`--theirs`/`--abort` kullanma (peer'in kaydını düşürür).
+- **Kod çakışması önemsiz DEĞİLdir:** çöz, yeniden doğrula (yeşil), sonra push.
+- `main`'e asla `--force` / `--force-with-lease` push etme.
+
+**Bakım:** kabaca son ~15-20 kaydı tut (eskiler git geçmişinde kalır). Kayıtlar
+kısa olsun; dosya listesi yazma (onu git tutar), **yapılan işi** yaz. Dil: mevcut
+günlükle tutarlı (Türkçe) ya da İngilizce.
 
 **Kayıt formatı** (en yeni en üstte):
 
 ```
-### <tarih> — <kimlik, ör. Claude-Session: https://claude.ai/code/session_XXXX>
+### <ISO-8601 UTC tarih, mümkünse saat — ör. 2026-07-05T14:30Z> — <kimlik>
 **Yaptım:** <bir-iki cümle, ne yapıldı>
 **Sırada:** <varsa planlanan sonraki iş; yoksa "—">
 ```
 
----
+Kimlik: aracının adıyla başla, aracın veriyorsa session URL/ID ekle, yoksa araç
+adı + tarih. Örnekler:
+`Claude-Session: https://claude.ai/code/session_XXXX` ·
+`Antigravity: <workspace/agent> (2026-07-05)`
+
+<!-- NEW ENTRIES BELOW, NEWEST FIRST -->
 
 ### 2026-07-05 — Claude-Session: https://claude.ai/code/session_01VwqkEe5sMnLeEL29TDnbJs
-**Yaptım:** Bu çalışma günlüğü bölümünü ve çoklu-agent işbirliği protokolünü
-(göreve başlamadan önce pull + günlüğü oku; görev sonunda kayıt + push) ekledim;
-protokolü `AGENTS.md` ve `.agents/rules/50-collaboration.md`'ye kural olarak
-işledim. Öncesinde: vendor-agnostik LLM katmanı (Claude/OpenAI/Gemini/Marketplace),
-AWS güvenli-flow (root ile bir kez `agui-deployer` IAM), `/check` & `/build` &
-`/aws-bootstrap` komutları, izolasyon kuralı, ignore sertleştirmesi ve tüm
-dokümanların senkronu tamamlandı (ayrıntı `resources/CHANGELOG.md`).
-**Sırada:** Kullanıcının vereceği bir provider anahtarıyla #7 (LLM tool-calling —
-model kartı kendisi seçsin) veya AWS erişimiyle #10 (AgentCore/EKS deploy).
+**Yaptım:** Çalışma günlüğü bölümünü ve çoklu-agent işbirliği protokolünü ekledim
+(göreve başlamadan pull + günlüğü oku; görev sonunda doğrula→yeşilse→logla→push).
+4-mercekli adversarial gözden geçirmeyle sertleştirdim: push-politikası istisnası,
+doğrulama kapısı, rebase/çakışma adımları, araç-nötr kimlik, tek kanonik kopya.
+Önceki işlerin özeti `resources/CHANGELOG.md`'de.
+**Sırada:** Bir provider anahtarıyla #7 (LLM tool-calling) veya AWS ile #10 (deploy).

@@ -101,7 +101,8 @@ citations, form, approval (HITL), canvas.
 - After any change, verify: `pytest -q` + `scripts/smoke_e2e.py` (backend) and
   `npm run typecheck && npm run lint && npm run build` (frontend). The smoke exits
   non-zero on failure.
-- Work on `main`; commit and push only when asked.
+- Work on `main`; commit and push only when asked — except the work-log entry,
+  which the collaboration protocol requires you to commit and push after each task.
 
 ## Tool-specific setup
 
@@ -127,14 +128,10 @@ restricted by the install-isolation rule.
 
 ## Collaboration protocol (multiple agents / tools)
 
-More than one agent may work this repo in parallel (Claude Code, Antigravity, …).
-Stay in sync:
-
-- **Before starting a task:** `git pull` on `main`, review what changed, and read
-  the newest entries in the work log at the end of `resources/HANDOFF.md` (section
-  11) to see what others just did and plan to do.
-- **After finishing a task:** prepend a short entry to that work log — your
-  session identity, what you did, and what you plan next (if anything) — then
-  commit and push to `main`. If the push is rejected, `git pull --rebase` and push
-  again; work-log conflicts are trivial, keep both entries.
-- Log the *work*, not the file list (git already tracks files).
+More than one agent may work `main` in parallel (Claude Code, Antigravity, …).
+**Before a task:** `git pull`, review changes, and read the newest entries in the
+work log at the end of `resources/HANDOFF.md`. **After a task:** run the standard
+verification and, only if green, prepend a short work-log entry (identity, what
+you did, what you plan next) and push to `main` — this is the one exception to
+"push only when asked". The full steps, conflict handling, and entry format are
+the **canonical copy** in that work log; follow it there.
