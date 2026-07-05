@@ -33,8 +33,10 @@ yapabiliriz.**
     istemcimiz, elle yazılmış kartlar ve **Event Inspector** (canlı event akışı).
   - `copilotkit`: CopilotKit provider + `CopilotChat` + `useCopilotAction`
     kartları, `/api/copilotkit` runtime route'u üzerinden AG-UI backend'e bağlı.
-- **Mesaj/kart tipleri**: streaming metin, lookup tool kartı, **tablo**,
-  **follow-up / sonraki adımlar**, önerilen sorular, onay (HITL), canvas.
+- **Mesaj/kart tipleri (10)**: streaming metin, lookup tool kartı, **tablo**,
+  **chart**, **follow-up / sonraki adımlar**, önerilen sorular, **citations**,
+  **form**, onay (HITL), canvas. (Bunların 8'i `catalog`'da tool; text ve canvas
+  tool değil.)
 
 ### Senaryo ajanları (`agents/` — ayrı klasör)
 Dört scriptli senaryo ajanı, her biri farklı bir kart kombinasyonu gösterir:
@@ -104,31 +106,33 @@ Bunların hepsi backend catalog'u ile birebir aynı isimlerde; ajan tool'u isiml
 
 ## 3. Bundan sonra neler yapabiliriz
 
-### Kısa vade (CopilotKit'i tam oturtmak)
-1. **CopilotKit-native HITL**: backend'e, onayda run'ı bitirip bir sonraki run'da
-   tool sonucunu tüketen bir mod ekle; böylece `renderAndWaitForResponse` uçtan
-   uca çalışır. (Alternatif: CopilotKit render içinden `/agui/resume`'a köprü.)
-2. **Canvas'ı `useCoAgent` ile bağla**: shared-state dokümanını CopilotKit agent
-   state'i olarak expose et, `useCoAgentStateRender` ile canlı render et.
-3. **Native öneriler**: `useCopilotChatSuggestions` ile önerilen soruları
-   CopilotKit'in kendi mekanizmasına taşı.
-4. **CopilotKit modunda ajan seçimi**: sidebar'daki senaryo ajanını CopilotKit
-   HttpAgent'a parametre olarak geçir (şu an CopilotKit modu tek ajana bağlı).
+### Yapıldı (kısa vade, artık tamamlandı)
+- ✅ **CopilotKit-native HITL köprüsü**: onay args'ına `runId` enjekte edildi;
+  CopilotKit onay kartı `respond()` + `/agui/resume` köprüsü çağırıyor. (Tam
+  round-trip tarayıcı doğrulaması bekliyor.)
+- ✅ **Canvas'ı `useCoAgent` ile bağla**: `CopilotCanvasPanel` shared-state'i
+  okuyor.
+- ✅ **CopilotKit modunda ajan seçimi**: seçili id provider `properties` ile
+  `forwardedProps` olarak geçiyor.
+- ✅ **Yeni kartlar**: chart, citations, form eklendi (iki client'ta da).
 
-### Orta vade (yeni kart tipleri)
-5. Yeni generative UI kartları: **chart/grafik**, **kaynak/citation listesi**,
-   **dosya/attachment**, **form (yapılandırılmış girdi toplama)**, **kod bloğu**,
-   **harita**. Her biri: iki catalog'a tool ekle → store reducer + component
-   (custom) ve `useCopilotAction` render (CopilotKit).
-6. Senaryo ajanlarını **gerçek LLM** (Marketplace/`langgraph`) ile güçlendir;
-   scriptli akışları model kararlarıyla değiştir.
+### Kısa vade (kalan)
+1. **Native öneriler**: `useCopilotChatSuggestions` ile önerilen soruları
+   CopilotKit'in kendi mekanizmasına taşı (şu an `useCopilotAction` render ile).
+2. Ek generative UI kartları: **dosya/attachment**, **kod bloğu**, **harita** —
+   pattern için `card-type-builder` subagent'ını kullan.
+3. Senaryo ajanlarını **gerçek LLM** (Marketplace/`langgraph`) ile güçlendir;
+   scriptli akışları model tool-calling kararlarıyla değiştir (bkz. HANDOFF §9 #7).
 
 ### Uzun vade (üretim ve bulut)
-7. **AgentCore deploy** (Phase 2) ve **EKS deploy** (Phase 3) — varlıklar hazır,
+4. **AgentCore deploy** (Phase 2) ve **EKS deploy** (Phase 3) — varlıklar hazır,
    manuel adımlar `deploy/*/README.md`'de.
-8. **Entra sign-in**'i aç, geçmişi ve run'ları kullanıcıya scope'la.
-9. **Dayanıklı HITL**: in-memory resume yerine kalıcı workflow motoru.
-10. Gözlemlenebilirlik: event loglarını topla, lint'le, replay dashboard'u kur.
+5. **Entra sign-in**'i aç, geçmişi ve run'ları kullanıcıya scope'la.
+6. **Dayanıklı HITL**: in-memory resume yerine kalıcı workflow motoru.
+7. Gözlemlenebilirlik: event loglarını topla, lint'le, replay dashboard'u kur.
+
+> Kalan işlerin canlı listesi `TODO.md`'de; madde bazlı implementasyon planı
+> `resources/HANDOFF.md` §9'da.
 
 ---
 
@@ -138,11 +142,17 @@ Bunların hepsi backend catalog'u ile birebir aynı isimlerde; ajan tool'u isiml
 # custom client (varsayılan, HITL uçtan uca çalışır, Event Inspector var)
 cp .env.example .env
 cd backend && uvicorn app.main:app --reload
-cd frontend && npm run dev   # http://localhost:3000
+cd frontend && npm install --legacy-peer-deps && npm run dev   # http://localhost:3000
 
 # CopilotKit client
 # .env: NEXT_PUBLIC_CLIENT=copilotkit
+
+# doğrulama (kod değişince)
+cd backend && python scripts/smoke_e2e.py   # uçtan uca SSE smoke, exit-code'lu
 ```
+
+Local Claude Code session için `CLAUDE.md` + `.claude/` (subagent'lar ve
+`/verify`, `/smoke`, `/add-card`, `/new-scenario` komutları) hazır.
 
 Sidebar'dan bir senaryo ajanı seç (ör. Doc Writer) ve mesaj gönder; her ajan
 farklı kart kombinasyonu üretir. Kaynak eşleme tablosu ve mimari için kök

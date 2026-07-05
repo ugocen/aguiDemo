@@ -289,9 +289,17 @@ See `.env.example` for the full, commented list. Highlights:
 # backend, translator + HITL + ordering-lint tests
 cd backend && source .venv/bin/activate && pytest -q
 
-# frontend, typecheck and production build
-cd frontend && npm run typecheck && npm run build
+# backend, end-to-end SSE smoke (health, every scenario streamed with resolved
+# HITL, ordering-lint, run-log, catalog parity), exits non-zero on failure
+cd backend && source .venv/bin/activate && python scripts/smoke_e2e.py
+
+# frontend, typecheck, lint, production build
+cd frontend && npm run typecheck && npm run lint && npm run build
 ```
+
+Working in a local Claude Code session? `CLAUDE.md` and `.claude/` provide
+project memory, the `/verify` and `/smoke` commands, and subagents for adding
+card types and scenario agents.
 
 ## Event logs and evidence
 

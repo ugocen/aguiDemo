@@ -31,24 +31,35 @@ endpoint target changed (isolated to `lib/agui.ts`). If AgentCore's native
 AG-UI shape ever diverges from the agent, the fronting FastAPI endpoint stays in
 place, as the plan's risk note anticipates.
 
-## AG-UI client, CopilotKit vs the fallback
+## AG-UI client, custom and CopilotKit (both shipped)
 
-The plan names CopilotKit as the primary AG-UI client and `@ag-ui/client` with a
-hand-built pane as the sanctioned fallback. This build uses the fallback path:
-`lib/agui.ts` is a small, self-contained AG-UI-over-SSE client and the four
-catalog components are hand-built. Two reasons drove this:
+The repo now ships **two interchangeable AG-UI clients**, selected by
+`NEXT_PUBLIC_CLIENT`:
+
+- `custom` (default): a small, self-contained AG-UI-over-SSE client in
+  `lib/agui.ts` with hand-built cards and a live Event Inspector. Human-in-the-loop
+  and canvas work end to end here.
+- `copilotkit`: the CopilotKit provider + `CopilotChat`, every card defined
+  through `useCopilotAction` in `components/copilot/CopilotGenerativeUI.tsx`, a
+  `/api/copilotkit` runtime route bridging to the backend via an AG-UI
+  `HttpAgent`, the canvas via `useCoAgent`, scenario selection via provider
+  `properties`, and the approval bridged to `/agui/resume`.
+
+The custom client was built first (and is the default) for two reasons:
 
 1. The human-in-the-loop design here is a single suspended run resumed through
    `POST /agui/resume` and an in-memory `asyncio.Event`, which does not match
    CopilotKit's native multi-run HITL. The custom client makes the resume flow
-   exact and observable.
-2. It keeps the frontend self-contained and verifiable (`tsc` and `next build`
-   both pass) without depending on a specific CopilotKit version.
+   exact and observable end to end.
+2. It keeps a self-contained, fully verifiable path (`tsc` + `next build` pass)
+   independent of a specific CopilotKit version.
 
-All AG-UI wiring is isolated to `lib/agui.ts`, so swapping to CopilotKit's
-`HttpAgent` or AgentCore's native endpoint is a one-module change, exactly as
-the plan requires. CopilotKit and MSAL remain declared in `package.json` as the
-intended stack.
+The CopilotKit path is build-verified (`tsc` + `next build`); full runtime
+behavior (HITL round-trip, canvas) needs a browser, which was unavailable here.
+Notes: CopilotKit 1.4.x ships source-only (no `dist`) so it was upgraded to
+1.62.2, which needs `npm install --legacy-peer-deps`. MSAL is declared for the
+Entra work (not yet wired). All AG-UI wiring stays isolated, so pointing at
+AgentCore's native endpoint later is a contained change.
 
 ## What worked
 
