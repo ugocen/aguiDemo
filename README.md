@@ -348,3 +348,7 @@ Each has its own `README.md` with step-by-step commands.
 what is done, which CopilotKit primitives fit which message type, and next
 steps. `docs/FINDINGS.md` records the Marketplace streaming, AgentCore fit, and
 CopilotKit decisions, and what surprised us.
+
+For a new (local) session, start with `resources/HANDOFF.md` (bootstrap: purpose,
+decision log, architecture, repo map, run/verify, gotchas, implementation plan)
+and `resources/CHANGELOG.md` (a themed summary of everything built so far).

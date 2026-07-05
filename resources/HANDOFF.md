@@ -95,15 +95,26 @@ bağlamı en çok buradan kazanır.
   (karar buffer'lanır). Prod'da dayanıklı workflow motoru gerekir (Temporal
   bilinçli olarak kullanılmadı — demo kapsamı).
 
-- **Marketplace client OpenAI-uyumlu varsayıldı.** `stream` ve `chunked`
-  fallback modları; aktif mod loglanır. Şu an yalnız **metin** streaming var;
-  tool-calling yok (bkz. #7).
+- **Vendor-agnostik model yolu.** `app/llm/factory.build_llm` tek giriş; provider
+  `LLM_PROVIDER` ile seçilir (Claude/OpenAI/Gemini/Marketplace), hepsi aynı
+  `stream_completion` arayüzünü sunar. Sebep: ajanların herhangi bir LLM
+  vendor'ıyla çalışabilmesi. Şu an yalnız metin streaming; tool-calling #7.
 
 - **Kimlik header'dan, asla `RunAgentInput`'tan.** dev stub + Entra bearer
   doğrulama kodu yazıldı; Entra gerçek tenant'la test edilmedi.
 
 - **Persistence: Postgres, swap edilebilir repository arkasında.** SQLite ile
   uçtan uca test edildi.
+
+- **İzolasyon kuralı.** Paketler hep venv (`backend/.venv`) / `node_modules`'a;
+  global kurulum yok. `.claude/settings.json` global-install'ları hard-deny eder.
+  Harici servislere bağlanma (AWS/Marketplace/GitHub) bu kapsamda değil.
+
+- **AWS: root sadece bir kez.** `deploy/aws/bootstrap_iam.sh` root ile bir kez
+  scoped `agui-deployer` IAM kullanıcısı oluşturur; sonra hep o profil, asla root.
+
+- **Çoklu-araç agent config.** `AGENTS.md` kanonik (Antigravity + Claude Code);
+  `CLAUDE.md` onu `@import` eder → drift yok. `.claude/` ve `.agents/` paralel.
 
 ---
 
@@ -117,9 +128,11 @@ bağlamı en çok buradan kazanır.
 | HITL onay (custom client) | ✅ | `/agui/resume` ile suspend/resume, approve+reject |
 | Persistence | ✅ | SQLite ile create/list/load + tool_events_json |
 | Event capture + ordering lint | ✅ | `pytest` 4/4, `docs/sample_run_log.jsonl` lint-temiz |
-| Backend/frontend catalog parity (8 tool) | ✅ | statik karşılaştırma |
+| Backend/frontend catalog parity (8 tool) | ✅ | `smoke_e2e.py` statik karşılaştırma |
 | tsc + eslint + next build (iki client) | ✅ | |
 | Scenario routing (`agentId`) | ✅ | 4 senaryo + mock default |
+| Vendor-agnostik LLM (Claude/OpenAI/Gemini/Marketplace) | ✅ | `test_llm_providers.py` her vendor SSE parse'ı (mock HTTP), 8/8 test |
+| AWS güvenli-flow varlıkları (deploy/aws) | ✅ hazır | policy JSON geçerli, script bash -n temiz (deploy edilmedi) |
 
 ### Yazıldı ama tam doğrulanmadı (bu ortamda imkânsızdı)
 | Özellik | Neden doğrulanmadı |
@@ -199,13 +212,21 @@ backend/app/
   agent/tools.py           lookup_knowledge (demo backend tool)
   agent/events.py          semantik event dataclass'ları
   agent/base.py            latest_user_text, initial_state
-  llm/marketplace.py       ★ gateway client (stream/chunked) — şu an sadece metin
+  llm/factory.py           ★ build_llm(settings) — TEK model yolu, provider seçer
+  llm/base.py              LLMClient protocol + split_system helper
+  llm/openai_compatible.py OpenAI-uyumlu çekirdek (stream/chunked)
+  llm/marketplace.py       Marketplace gateway (openai_compatible sarmalayıcı)
+  llm/openai_provider.py   OpenAI
+  llm/anthropic_provider.py  Claude (Messages API SSE)
+  llm/gemini_provider.py   Gemini (streamGenerateContent SSE)
   db/models.py             Conversation, Message (SQLAlchemy)
   db/session.py            async engine, session_scope
   db/repository.py         HistoryRepository (Protocol) + SqlAlchemy impl
   auth/entra.py            get_current_principal (dev stub | Entra JWKS doğrulama)
   logging/setup.py         structlog
 backend/tests/test_event_order.py   translator + HITL + lint testleri
+backend/tests/test_llm_providers.py  her vendor'ın SSE parse'ı (mock HTTP)
+backend/scripts/smoke_e2e.py         ★ uçtan uca SSE smoke (exit-code'lu)
 
 agents/                    ★ senaryo ajanları (ayrı paket)
   registry.py              id → sınıf, scenario_descriptors()
@@ -235,8 +256,19 @@ frontend/
 
 deploy/agentcore/          Faz 2: agentcore_app.py (/ping,/invocations) + Dockerfile
 deploy/eks/                Faz 3: Helm chart (backend/frontend/ingress/config)
+deploy/aws/                IAM policy + bootstrap_iam.sh + README (root-once flow)
+scripts/check_env.sh       ★ ön koşul kontrolü (Python/Node/npm/Docker/venv)
 docs/                      FINDINGS, PROJECT_STATUS_AND_ROADMAP, sample_run_log
-README.md, TODO.md, .env.example, docker-compose.yml
+
+Agent tooling (çoklu araç):
+  AGENTS.md                ★ kanonik cross-tool rehber (Antigravity+Claude+…)
+  CLAUDE.md                @AGENTS.md import + Claude-özel
+  .claude/agents/          subagent'lar (card-type-builder, scenario-agent-builder, agui-verifier)
+  .claude/commands/        /check /verify /smoke /run /build /add-card /new-scenario /aws-bootstrap
+  .claude/settings.json    izin allow + global-install deny
+  .agents/rules/           Antigravity always-on kurallar (start/invariants/verify/isolation/aws)
+  .agents/workflows/       aynı 8 slash workflow
+README.md, TODO.md, .env.example, docker-compose.yml, .gitignore, .dockerignore
 ```
 
 ---
@@ -283,16 +315,19 @@ cd frontend && npm run typecheck && npm run lint && npm run build
 **Agent kurulumu (çoklu araç için hazır):**
 - `AGENTS.md` (kök) — **kanonik**, cross-tool agent rehberi (Antigravity + Claude
   Code + diğerleri okur). Tek doğruluk kaynağı; içeriği başka yere kopyalama.
-- **Antigravity**: `.agents/rules/` (always-on kurallar) + `.agents/workflows/`
-  (`/verify`, `/smoke`, `/run`, `/add-card`, `/new-scenario` slash workflow'ları).
+- **Antigravity**: `.agents/rules/` (always-on kurallar: start-here, invariants,
+  verify, **isolation**, **aws**) + `.agents/workflows/` (8 slash workflow).
   Not: bazı Antigravity sürümleri workflow'ları `.agent/workflows/` (tekil)
   okuyor; workflow yok sayılırsa klasörü yeniden adlandır.
 - **Claude Code**: `CLAUDE.md` (`@AGENTS.md` import eder — drift olmaz), proje
-  hafızası (komutlar, mimari değişmezleri, tuzaklar).
-- `.claude/agents/` — subagent'lar: `card-type-builder` (yeni kart tipi ekler),
-  `scenario-agent-builder` (yeni senaryo ajanı), `agui-verifier` (doğrular).
-- `.claude/commands/` — slash komutları: `/verify`, `/smoke`, `/run`, `/add-card`,
-  `/new-scenario`.
+  hafızası; `.claude/settings.json` global-install deny + izin allow'u.
+- `.claude/agents/` — subagent'lar: `card-type-builder`, `scenario-agent-builder`,
+  `agui-verifier`.
+- **8 komut (Claude + Antigravity)**: `/check` (ön koşul), `/verify`, `/smoke`,
+  `/run` (dev), `/build` (Docker imaj), `/add-card`, `/new-scenario`,
+  `/aws-bootstrap` (root ile bir kez IAM deployer).
+- **Kurallar**: paketler hep venv/node_modules'a (global kurulum yok); AWS hep
+  `agui-deployer` profili (root sadece bootstrap'ta). Ayrıntı: `AGENTS.md`.
 - `.claude/settings.json` — sık dev komutları için izin listesi (prompt azaltır).
 - `backend/scripts/smoke_e2e.py` — committed uçtan uca doğrulama (exit code'lu).
 
@@ -326,9 +361,12 @@ Bu ortamda debug ederken bulundu; yeni session'da hatırla:
 
 Canlı liste: `TODO.md`. Öncelik sırasıyla kalanlar:
 
-- **#7 Gerçek LLM ile tool-calling** (en yüksek etki) — Marketplace anahtarı gerekir.
+- **#7 LLM tool-calling** — model *karar versin* (chart mı table mı) + senaryo
+  ajanlarını gerçek modelle besle. **Vendor katmanı hazır** (Claude/OpenAI/Gemini),
+  sadece tool-calling eklenip bir provider key'i verilecek.
 - **#9 Entra sign-in uçtan uca** — Azure AD app registration gerekir.
-- **#10 AgentCore + EKS deploy** — AWS erişimi, manuel.
+- **#10 AgentCore + EKS deploy** — önce `/aws-bootstrap` (root ile bir kez), sonra
+  `agui-deployer` profiliyle deploy.
 - **CopilotKit HITL/canvas tarayıcı doğrulaması** — #4/#5 kod hazır, gözle test.
 - **#11 Dayanıklı HITL + replay dashboard** — büyük, opsiyonel.
 
@@ -338,11 +376,16 @@ Canlı liste: `TODO.md`. Öncelik sırasıyla kalanlar:
 
 ### #7 — Gerçek LLM tool-calling (öncelikli)
 **Amaç:** "chart mı table mı?" kararını heuristic yerine modele bıraktırmak.
-1. `.env`: `AGENT_MODE=langgraph`, `MARKETPLACE_BASE_URL/API_KEY/MODEL` doldur.
-2. `llm/marketplace.py`'ye tool-calling ekle: `_payload`'a OpenAI-uyumlu
-   `tools` alanı (RunAgentInput.tools → `{"type":"function","function":{name,
-   description, parameters}}`) ve `tool_choice:"auto"` ekle. Stream'de
-   `choices[].delta.tool_calls`'ı da biriktir (şu an sadece `content` var).
+**Not:** Vendor-agnostik model yolu ARTIK HAZIR — `LLM_PROVIDER` ile Claude/OpenAI/
+Gemini/Marketplace seçiliyor (`app/llm/factory.build_llm`, hepsi
+`stream_completion` sunar, `test_llm_providers.py` ile parse doğrulandı). Kalan iş
+sadece tool-calling'i eklemek:
+1. `.env`: `AGENT_MODE=langgraph`, `LLM_PROVIDER=anthropic|openai|gemini|marketplace`
+   ve ilgili `*_API_KEY`/`*_MODEL` doldur.
+2. `app/llm/openai_compatible.py`'ye (OpenAI/Marketplace için) tool-calling ekle:
+   payload'a `tools` (RunAgentInput.tools → OpenAI function şeması) + `tool_choice`,
+   stream'de `choices[].delta.tool_calls` biriktir. Anthropic/Gemini için de kendi
+   tool formatları (Anthropic `tools`+`tool_use` blokları; Gemini `functionDeclarations`).
 3. `agent/graph.py::LangGraphAgent.run()`: modelin döndürdüğü `tool_calls`'ı
    `ToolCallStarted(name, args)` semantik event'lerine map et. Frontend-render
    tool'ları (renderChart/renderTable/...) için `ToolCallCompleted` gerekmez;
@@ -378,9 +421,13 @@ Canlı liste: `TODO.md`. Öncelik sırasıyla kalanlar:
    doğrula.
 
 ### #10 — Deploy (manuel)
-`deploy/agentcore/README.md` (CLI veya ECR-register) ve `deploy/eks/README.md`
-adımlarını izle. Backend imajını **repo kökünden** build et. RDS bağlantısını
-`values.yaml` secrets'a, `AUTH_MODE=entra` ile.
+0. **Önce AWS bootstrap** (bir kez, root ile): `/aws-bootstrap` veya
+   `bash deploy/aws/bootstrap_iam.sh` → `agui-deployer` IAM kullanıcısı oluşur.
+   Sonra `aws configure --profile agui-deployer`. Bundan sonra **hep bu profil**,
+   asla root (bkz. `deploy/aws/README.md`, `.agents/rules/40-aws.md`).
+1. `deploy/agentcore/README.md` (CLI veya ECR-register) ve `deploy/eks/README.md`
+   adımlarını izle. Backend/agentcore imajını **repo kökünden** build et (`/build`).
+   RDS bağlantısını `values.yaml` secrets'a, `AUTH_MODE=entra` ile.
 
 ### #11 — Dayanıklı HITL + replay dashboard (opsiyonel)
 `resume.py`'yi dış store (ör. Redis/DB) ile değiştir; `/agui/runs/{id}/log`'u
