@@ -86,6 +86,34 @@ Open http://localhost:3000. Try:
 You will see streaming text, a `lookupKnowledge` tool card, the canvas panel
 opening and filling live, and an approval card. Approve or reject to resume.
 
+## Message types and generative UI
+
+The agent sends different message types over AG-UI and the frontend renders a
+matching component for each. The contract is shared on both sides:
+
+- The frontend declares the tools it can render in `RunAgentInput.tools`
+  (`frontend/lib/catalog.ts`), the backend advertises the same schemas
+  (`backend/app/agui/catalog.py`), and the agent calls them by name.
+- The store reducer (`frontend/lib/store.ts`) maps each event/tool name to a
+  card, the same idea as CopilotKit's `useCopilotAction` render handlers, kept
+  here in one place so the flow is explicit.
+
+| Message type | Emitted as | Rendered by |
+| --- | --- | --- |
+| Streaming text | `TEXT_MESSAGE_*` | chat bubble |
+| Backend lookup | `lookupKnowledge` tool call + result | `ToolCard` |
+| Table | `renderTable` tool call | `TableCard` |
+| Follow-up / next steps | `renderFollowUp` tool call | `FollowUpCard` |
+| Suggested questions | `renderSuggestedQuestions` tool call | chips |
+| Approval (human-in-the-loop) | `requestApproval` + `/agui/resume` | `ApprovalCard` |
+| Canvas edits | `STATE_SNAPSHOT` / `STATE_DELTA` | Tiptap canvas |
+
+To see how the agent sends each type and how the frontend processes it, click
+**Show events** in the top bar. The event inspector logs every AG-UI event live,
+grouped by category (lifecycle, text, tool, state), so the raw stream behind the
+rendered cards is visible. Adding a new card type is: declare a tool in both
+catalogs, handle its name in the store reducer, and add a component.
+
 ## Environment variables
 
 See `.env.example` for the full list. Key ones:

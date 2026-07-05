@@ -2,7 +2,13 @@ import { create } from "zustand";
 
 import { AgentDescriptor, ConversationSummary, StoredMessage } from "./api";
 import { AguiEvent, JsonPatchOp, newId } from "./agui";
-import { APPROVAL_TOOL, LOOKUP_TOOL, SUGGESTED_QUESTIONS_TOOL } from "./catalog";
+import {
+  APPROVAL_TOOL,
+  FOLLOWUP_TOOL,
+  LOOKUP_TOOL,
+  SUGGESTED_QUESTIONS_TOOL,
+  TABLE_TOOL,
+} from "./catalog";
 
 export interface DocumentState {
   title: string;
@@ -39,13 +45,50 @@ export interface ApprovalItem {
   decision: { approved: boolean; reason: string } | null;
 }
 
+export interface TableItem {
+  kind: "table";
+  id: string;
+  title: string;
+  columns: string[];
+  rows: string[][];
+}
+
+export interface FollowUpEntry {
+  label: string;
+  detail: string;
+}
+
+export interface FollowUpItem {
+  kind: "followup";
+  id: string;
+  title: string;
+  entries: FollowUpEntry[];
+}
+
 export interface ErrorItem {
   kind: "error";
   id: string;
   message: string;
 }
 
-export type ChatItem = UserItem | AssistantItem | ToolItem | ApprovalItem | ErrorItem;
+export type ChatItem =
+  | UserItem
+  | AssistantItem
+  | ToolItem
+  | ApprovalItem
+  | TableItem
+  | FollowUpItem
+  | ErrorItem;
+
+export type EventCategory = "lifecycle" | "text" | "tool" | "state" | "other";
+
+export interface EventLogEntry {
+  seq: number;
+  type: string;
+  category: EventCategory;
+  detail: string;
+  count: number;
+}
 
 interface StoreState {
   agents: AgentDescriptor[];
@@ -58,6 +101,9 @@ interface StoreState {
   isRunning: boolean;
   currentRunId: string | null;
   pendingApprovalId: string | null;
+
+  eventLog: EventLogEntry[];
+  eventSeq: number;
 
   toolNames: Record<string, string>;
   toolArgs: Record<string, string>;
@@ -72,6 +118,47 @@ interface StoreState {
   setSuggestedQuestions: (questions: string[]) => void;
   handleEvent: (event: AguiEvent) => void;
   setApprovalDecision: (id: string, approved: boolean, reason: string) => void;
+  clearEventLog: () => void;
+}
+
+const EVENT_CATEGORY: Record<string, EventCategory> = {
+  RUN_STARTED: "lifecycle",
+  RUN_FINISHED: "lifecycle",
+  RUN_ERROR: "lifecycle",
+  TEXT_MESSAGE_START: "text",
+  TEXT_MESSAGE_CONTENT: "text",
+  TEXT_MESSAGE_END: "text",
+  TOOL_CALL_START: "tool",
+  TOOL_CALL_ARGS: "tool",
+  TOOL_CALL_END: "tool",
+  TOOL_CALL_RESULT: "tool",
+  STATE_SNAPSHOT: "state",
+  STATE_DELTA: "state",
+};
+
+function categoryOf(type: string): EventCategory {
+  return EVENT_CATEGORY[type] ?? "other";
+}
+
+function summarize(event: AguiEvent): string {
+  switch (event.type) {
+    case "RUN_STARTED":
+      return `run ${event.runId ?? ""}`;
+    case "TEXT_MESSAGE_CONTENT":
+      return typeof event.delta === "string" ? JSON.stringify(event.delta) : "";
+    case "TOOL_CALL_START":
+      return event.toolCallName ?? "";
+    case "TOOL_CALL_RESULT":
+      return (event.content ?? "").slice(0, 60);
+    case "STATE_DELTA":
+      return Array.isArray(event.delta)
+        ? (event.delta as JsonPatchOp[]).map((op) => op.path).join(", ")
+        : "";
+    case "RUN_ERROR":
+      return event.message ?? "";
+    default:
+      return "";
+  }
 }
 
 const EMPTY_DOC: DocumentState = { title: "Untitled", content: "" };
@@ -111,6 +198,8 @@ export const useStore = create<StoreState>((set, get) => ({
   isRunning: false,
   currentRunId: null,
   pendingApprovalId: null,
+  eventLog: [],
+  eventSeq: 0,
   toolNames: {},
   toolArgs: {},
 
@@ -127,7 +216,11 @@ export const useStore = create<StoreState>((set, get) => ({
       suggestedQuestions: [],
       pendingApprovalId: null,
       currentRunId: null,
+      eventLog: [],
+      eventSeq: 0,
     }),
+
+  clearEventLog: () => set({ eventLog: [], eventSeq: 0 }),
 
   loadMessages: (messages) =>
     set(() => {
@@ -158,6 +251,25 @@ export const useStore = create<StoreState>((set, get) => ({
 
   handleEvent: (event) => {
     const state = get();
+
+    set((s) => {
+      const last = s.eventLog[s.eventLog.length - 1];
+      if (event.type === "TEXT_MESSAGE_CONTENT" && last && last.type === "TEXT_MESSAGE_CONTENT") {
+        const merged = [...s.eventLog];
+        merged[merged.length - 1] = { ...last, count: last.count + 1, detail: summarize(event) };
+        return { eventLog: merged };
+      }
+      const entry: EventLogEntry = {
+        seq: s.eventSeq + 1,
+        type: event.type,
+        category: categoryOf(event.type),
+        detail: summarize(event),
+        count: 1,
+      };
+      const next = [...s.eventLog, entry];
+      return { eventLog: next.slice(-300), eventSeq: s.eventSeq + 1 };
+    });
+
     switch (event.type) {
       case "RUN_STARTED":
         set({ isRunning: true, currentRunId: event.runId ?? null });
@@ -221,6 +333,18 @@ export const useStore = create<StoreState>((set, get) => ({
               ],
             };
           }
+          if (name === TABLE_TOOL) {
+            return {
+              toolNames,
+              items: [...s.items, { kind: "table", id, title: "", columns: [], rows: [] }],
+            };
+          }
+          if (name === FOLLOWUP_TOOL) {
+            return {
+              toolNames,
+              items: [...s.items, { kind: "followup", id, title: "", entries: [] }],
+            };
+          }
           return { toolNames };
         });
         break;
@@ -259,6 +383,30 @@ export const useStore = create<StoreState>((set, get) => ({
                     action: String(args.action ?? "Approve this action"),
                     detail: String(args.detail ?? ""),
                   }
+                : item,
+            ),
+          }));
+        } else if (name === TABLE_TOOL) {
+          const columns = Array.isArray(args.columns) ? (args.columns as string[]) : [];
+          const rows = Array.isArray(args.rows) ? (args.rows as string[][]) : [];
+          set((s) => ({
+            items: s.items.map((item) =>
+              item.kind === "table" && item.id === id
+                ? { ...item, title: String(args.title ?? ""), columns, rows }
+                : item,
+            ),
+          }));
+        } else if (name === FOLLOWUP_TOOL) {
+          const entries = Array.isArray(args.items)
+            ? (args.items as Array<Record<string, unknown>>).map((entry) => ({
+                label: String(entry.label ?? ""),
+                detail: String(entry.detail ?? ""),
+              }))
+            : [];
+          set((s) => ({
+            items: s.items.map((item) =>
+              item.kind === "followup" && item.id === id
+                ? { ...item, title: String(args.title ?? ""), entries }
                 : item,
             ),
           }));

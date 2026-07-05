@@ -15,7 +15,13 @@ from app.agent.events import (
     ToolCallStarted,
 )
 from app.agent.tools import lookup_knowledge
-from app.agui.catalog import APPROVAL_TOOL, LOOKUP_TOOL
+from app.agui.catalog import (
+    APPROVAL_TOOL,
+    FOLLOWUP_TOOL,
+    LOOKUP_TOOL,
+    SUGGESTED_QUESTIONS_TOOL,
+    TABLE_TOOL,
+)
 from app.agui.resume import ApprovalDecision
 from app.config.settings import Settings
 from app.llm.marketplace import MarketplaceClient
@@ -26,6 +32,8 @@ class AgentState(TypedDict, total=False):
     wants_lookup: bool
     wants_document: bool
     wants_approval: bool
+    wants_table: bool
+    wants_followup: bool
     lookup_result: dict[str, Any]
     document_title: str
     document_content: str
@@ -37,6 +45,8 @@ def _plan_node(state: AgentState) -> AgentState:
         "wants_lookup": any(k in text for k in ("look up", "lookup", "what is", "explain", "?")),
         "wants_document": any(k in text for k in ("draft", "write", "document", "note", "canvas")),
         "wants_approval": any(k in text for k in ("approve", "deploy", "send", "publish", "confirm")),
+        "wants_table": any(k in text for k in ("table", "compare", "comparison", "matrix")),
+        "wants_followup": any(k in text for k in ("steps", "next", "follow", "todo")),
     }
 
 
@@ -131,6 +141,41 @@ class LangGraphAgent:
                     }
                 ]
             )
+
+        if plan.get("wants_table"):
+            yield ToolCallStarted(
+                tool_call_id=f"call_{uuid.uuid4().hex[:8]}",
+                name=TABLE_TOOL,
+                args={
+                    "title": "AG-UI event categories",
+                    "columns": ["Category", "Example event", "Rendered as"],
+                    "rows": [
+                        ["Lifecycle", "RUN_STARTED", "run state"],
+                        ["Text", "TEXT_MESSAGE_CONTENT", "chat bubble"],
+                        ["Tool", "TOOL_CALL_START", "tool card"],
+                        ["State", "STATE_DELTA", "canvas edit"],
+                    ],
+                },
+            )
+
+        if plan.get("wants_followup"):
+            yield ToolCallStarted(
+                tool_call_id=f"call_{uuid.uuid4().hex[:8]}",
+                name=FOLLOWUP_TOOL,
+                args={
+                    "title": "Next steps",
+                    "items": [
+                        {"label": "Review the draft", "detail": "Open the canvas panel."},
+                        {"label": "Ask a follow-up", "detail": "Use a suggested question."},
+                    ],
+                },
+            )
+
+        yield ToolCallStarted(
+            tool_call_id=f"call_{uuid.uuid4().hex[:8]}",
+            name=SUGGESTED_QUESTIONS_TOOL,
+            args={"questions": ["What is SSE?", "Explain AgentCore", "Compare the event types"]},
+        )
 
         if plan.get("wants_approval"):
             approval_id = f"call_{uuid.uuid4().hex[:8]}"

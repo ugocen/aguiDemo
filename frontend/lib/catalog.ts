@@ -1,6 +1,8 @@
 export const LOOKUP_TOOL = "lookupKnowledge";
 export const SUGGESTED_QUESTIONS_TOOL = "renderSuggestedQuestions";
 export const APPROVAL_TOOL = "requestApproval";
+export const TABLE_TOOL = "renderTable";
+export const FOLLOWUP_TOOL = "renderFollowUp";
 
 export interface ToolSchema {
   name: string;
@@ -46,6 +48,43 @@ export function toolCatalog(): ToolSchema[] {
           detail: { type: "string", description: "Context for the decision." },
         },
         required: ["action"],
+      },
+    },
+    {
+      name: TABLE_TOOL,
+      description: "Render structured tabular data as a table card.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Table caption." },
+          columns: { type: "array", items: { type: "string" }, description: "Column headers." },
+          rows: {
+            type: "array",
+            items: { type: "array", items: { type: "string" } },
+            description: "Row values, aligned to columns.",
+          },
+        },
+        required: ["columns", "rows"],
+      },
+    },
+    {
+      name: FOLLOWUP_TOOL,
+      description: "Render follow-up information or next steps as a list card.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Section heading." },
+          items: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: { label: { type: "string" }, detail: { type: "string" } },
+              required: ["label"],
+            },
+            description: "Follow-up entries.",
+          },
+        },
+        required: ["items"],
       },
     },
   ];

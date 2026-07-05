@@ -3,6 +3,8 @@ from typing import Any
 LOOKUP_TOOL = "lookupKnowledge"
 SUGGESTED_QUESTIONS_TOOL = "renderSuggestedQuestions"
 APPROVAL_TOOL = "requestApproval"
+TABLE_TOOL = "renderTable"
+FOLLOWUP_TOOL = "renderFollowUp"
 
 
 def tool_catalog() -> list[dict[str, Any]]:
@@ -50,6 +52,50 @@ def tool_catalog() -> list[dict[str, Any]]:
                     "detail": {"type": "string", "description": "Context for the decision."},
                 },
                 "required": ["action"],
+            },
+        },
+        {
+            "name": TABLE_TOOL,
+            "description": "Render structured tabular data as a table card.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string", "description": "Table caption."},
+                    "columns": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Column headers.",
+                    },
+                    "rows": {
+                        "type": "array",
+                        "items": {"type": "array", "items": {"type": "string"}},
+                        "description": "Row values, aligned to columns.",
+                    },
+                },
+                "required": ["columns", "rows"],
+            },
+        },
+        {
+            "name": FOLLOWUP_TOOL,
+            "description": "Render follow-up information or next steps as a list card.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string", "description": "Section heading."},
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "label": {"type": "string"},
+                                "detail": {"type": "string"},
+                            },
+                            "required": ["label"],
+                        },
+                        "description": "Follow-up entries.",
+                    },
+                },
+                "required": ["items"],
             },
         },
     ]
