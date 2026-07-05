@@ -1,0 +1,31 @@
+backend:
+  image: REPLACE_ME/agui-demo-backend:latest
+  replicas: 2
+  port: 8000
+
+frontend:
+  image: REPLACE_ME/agui-demo-frontend:latest
+  replicas: 2
+  port: 3000
+
+ingress:
+  enabled: true
+  className: alb
+  host: agui-demo.example.com
+
+env:
+  APP_ENV: production
+  AGENT_MODE: langgraph
+  AUTH_MODE: entra
+  MARKETPLACE_STREAM_MODE: stream
+  CORS_ALLOW_ORIGINS: https://agui-demo.example.com
+  NEXT_PUBLIC_AUTH_MODE: entra
+
+secrets:
+  DATABASE_URL: ""
+  MARKETPLACE_BASE_URL: ""
+  MARKETPLACE_API_KEY: ""
+  MARKETPLACE_MODEL: ""
+  ENTRA_TENANT_ID: ""
+  ENTRA_CLIENT_ID: ""
+  ENTRA_AUDIENCE: ""
