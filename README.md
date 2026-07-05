@@ -297,9 +297,14 @@ cd backend && source .venv/bin/activate && python scripts/smoke_e2e.py
 cd frontend && npm run typecheck && npm run lint && npm run build
 ```
 
-Working in a local Claude Code session? `CLAUDE.md` and `.claude/` provide
-project memory, the `/verify` and `/smoke` commands, and subagents for adding
-card types and scenario agents.
+Agent tooling is set up for multiple assistants:
+- **`AGENTS.md`** (root) — the canonical, cross-tool agent guide (read by
+  Antigravity, Claude Code, and others).
+- **Claude Code** — `CLAUDE.md` (imports `AGENTS.md`), `.claude/agents/` subagents,
+  `.claude/commands/` (`/verify`, `/smoke`, `/run`, `/add-card`, `/new-scenario`).
+- **Google Antigravity** — `.agents/rules/` (always-on rules) and
+  `.agents/workflows/` (the same `/verify`, `/smoke`, `/run`, `/add-card`,
+  `/new-scenario` as slash workflows).
 
 ## Event logs and evidence
 

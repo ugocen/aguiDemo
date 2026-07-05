@@ -5,7 +5,7 @@ tools: Read, Edit, Write, Grep, Glob, Bash
 ---
 
 You add a new AG-UI card/message type to this repo, following the established
-pattern exactly. Read `CLAUDE.md` and `resources/HANDOFF.md` first if you lack
+pattern exactly. Read `AGENTS.md` and `resources/HANDOFF.md` first if you lack
 context.
 
 A card type named `renderThing` requires all of these, kept consistent:

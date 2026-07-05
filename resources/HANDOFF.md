@@ -277,8 +277,15 @@ cd backend && source .venv/bin/activate && python scripts/smoke_e2e.py  # uçtan
 cd frontend && npm run typecheck && npm run lint && npm run build
 ```
 
-**Claude Code kurulumu (bu repo local session için hazır):**
-- `CLAUDE.md` — proje hafızası (komutlar, mimari değişmezleri, tuzaklar).
+**Agent kurulumu (çoklu araç için hazır):**
+- `AGENTS.md` (kök) — **kanonik**, cross-tool agent rehberi (Antigravity + Claude
+  Code + diğerleri okur). Tek doğruluk kaynağı; içeriği başka yere kopyalama.
+- **Antigravity**: `.agents/rules/` (always-on kurallar) + `.agents/workflows/`
+  (`/verify`, `/smoke`, `/run`, `/add-card`, `/new-scenario` slash workflow'ları).
+  Not: bazı Antigravity sürümleri workflow'ları `.agent/workflows/` (tekil)
+  okuyor; workflow yok sayılırsa klasörü yeniden adlandır.
+- **Claude Code**: `CLAUDE.md` (`@AGENTS.md` import eder — drift olmaz), proje
+  hafızası (komutlar, mimari değişmezleri, tuzaklar).
 - `.claude/agents/` — subagent'lar: `card-type-builder` (yeni kart tipi ekler),
   `scenario-agent-builder` (yeni senaryo ajanı), `agui-verifier` (doğrular).
 - `.claude/commands/` — slash komutları: `/verify`, `/smoke`, `/run`, `/add-card`,
