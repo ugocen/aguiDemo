@@ -96,7 +96,8 @@ citations, form, approval (HITL), canvas.
   create it first (`python -m venv backend/.venv` / `npm install
   --legacy-peer-deps`). This is about package installs only — connecting to
   external services (AWS, the Marketplace gateway, GitHub) is unaffected.
-- Keep comments minimal; no comment on the same line as code; English only in code.
+- Keep comments minimal; no comment on the same line as code. **English only** —
+  all code, comments, and documentation (README, HANDOFF, planning docs, etc.).
 - Read config from env via the single `Settings` object; never hardcode.
 - After any change, verify: `pytest -q` + `scripts/smoke_e2e.py` (backend) and
   `npm run typecheck && npm run lint && npm run build` (frontend). The smoke exits

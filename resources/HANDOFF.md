@@ -1,152 +1,155 @@
-# AG-UI Demo — Devir / Bootstrap Dokümanı
+# AG-UI Demo — Handoff / Bootstrap Document
 
-> Bu doküman, projeyi **yeni bir local Claude Code session'ında** (veya elle)
-> kaldığımız yerden devam ettirmek için yazıldı. Amaç, mevcut kod tabanının
-> tamamını, neden böyle yaptığımızı, doğrulanmış/doğrulanmamış olanları, kalan
-> işleri ve bunların adım adım implementasyon planını tek yerde toplamak.
+> This document exists to continue the project from where we left off in a **new
+> local Claude Code session** (or by hand). The goal is to gather, in one place,
+> the whole codebase, why it is the way it is, what is verified vs not, the
+> remaining work, and a step-by-step implementation plan.
 >
-> **Bir sonraki session'a ilk mesaj olarak şunu verebilirsin:**
-> "resources/HANDOFF.md dosyasını oku, projeyi anla, sonra `docs/PROJECT_STATUS_AND_ROADMAP.md`
-> ve `TODO.md`'ye bak. Kaldığımız yerden [şu işi] yapalım."
+> **A good first message for the next session:**
+> "Read resources/HANDOFF.md, understand the project, then look at
+> `docs/PROJECT_STATUS_AND_ROADMAP.md` and `TODO.md`. Let's continue with [task]."
 
-İçindekiler:
-1. [Amaç](#1-amaç)
-2. [Neyi neden yaptık (karar günlüğü)](#2-neyi-neden-yaptık-karar-günlüğü)
-3. [Mevcut durum — ne çalışıyor, ne çalışmıyor](#3-mevcut-durum)
-4. [Mimari ve uçtan uca akış](#4-mimari-ve-uçtan-uca-akış)
-5. [Repo haritası — hangi dosya ne yapar](#5-repo-haritası)
-6. [Local'de nasıl çalıştırılır ve doğrulanır](#6-localde-nasıl-çalıştırılır-ve-doğrulanır)
-7. [Bilinen tuzaklar (gotchas)](#7-bilinen-tuzaklar)
-8. [Eksikler ve yapılacaklar](#8-eksikler-ve-yapılacaklar)
-9. [İmplementasyon planı (kalan işler, adım adım)](#9-i̇mplementasyon-planı)
-10. [Git / branch durumu](#10-git--branch-durumu)
-11. [Çalışma günlüğü (work log)](#11-çalışma-günlüğü-work-log)
-
----
-
-## 1. Amaç
-
-**AG-UI protokolünü** uçtan uca sergileyen, Claude benzeri bir asistan workspace'i.
-AG-UI (Agent-User Interaction Protocol): backend, tipli JSON event'leri (lifecycle,
-text, tool call, state, custom) **Server-Sent Events (SSE)** üzerinden frontend'e
-akıtır; frontend her event'i canlı olarak render eder.
-
-Demo dört temel yeteneği + ek kart tiplerini canlı gösterir:
-- **Streaming chat** — token'lar model ürettikçe belirir.
-- **Görünür tool call** — canlı kart olarak.
-- **Paylaşılan-state doküman canvas'ı** — ajan konuşurken canlı düzenler.
-- **Human-in-the-loop onay** — ajan durur, kullanıcının kararıyla devam eder.
-- **Ek mesaj tipleri** — table, chart, follow-up, suggested questions, citations, form.
-
-Uzun vadeli hedef: ajanları AWS Bedrock **AgentCore**'da, uygulamayı **EKS**'te
-çalıştırmak; kimlik **Microsoft Entra** ile; model çağrıları bir **GenAI
-Marketplace** gateway'i üzerinden. Faz 1 (yerel) bitti; Faz 2/3 varlıkları hazır
-ama deploy edilmedi.
-
-Orijinal build spec'i: kullanıcının ilk verdiği plan (bu repoyu doğuran doküman).
-Onun özeti `README.md` ve `docs/` altında yaşıyor.
+Table of contents:
+1. [Purpose](#1-purpose)
+2. [What we did and why (decision log)](#2-what-we-did-and-why-decision-log)
+3. [Current status — what works, what does not](#3-current-status)
+4. [Architecture and end-to-end flow](#4-architecture-and-end-to-end-flow)
+5. [Repo map — what each file does](#5-repo-map)
+6. [How to run and verify locally](#6-how-to-run-and-verify-locally)
+7. [Known gotchas](#7-known-gotchas)
+8. [Gaps and remaining work](#8-gaps-and-remaining-work)
+9. [Implementation plan (remaining work, step by step)](#9-implementation-plan)
+10. [Git / branch status](#10-git--branch-status)
+11. [Work log](#11-work-log)
 
 ---
 
-## 2. Neyi neden yaptık (karar günlüğü)
+## 1. Purpose
 
-Bu bölüm, kod tabanındaki "neden böyle?" sorularının cevabı. Yeni session'ın
-bağlamı en çok buradan kazanır.
+A Claude-like assistant workspace that exercises the **AG-UI protocol** end to
+end. AG-UI (Agent-User Interaction Protocol): the backend streams typed JSON
+events (lifecycle, text, tool call, state, custom) to the frontend over
+**Server-Sent Events (SSE)**, and the frontend renders each one live.
 
-- **Tek event kaynağı (`translator.py`).** Tüm AG-UI protokol event'leri tek bir
-  yerden yayınlanır. Ajanlar framework-bağımsız *semantik* event'ler üretir
-  (`TextDelta`, `ToolCallStarted`, `DocumentDelta`, `ApprovalRequested`);
-  translator bunları protokole çevirir ve sıralama/eşleşme kurallarını zorlar.
-  Sebep: protokol doğruluğunu tek yerde garanti etmek, ajanları saf tutmak.
+The demo shows the four core capabilities plus extra card types, live:
+- **Streaming chat** — tokens appear as the model produces them.
+- **A visible tool call** — rendered as a live card.
+- **A shared-state document canvas** — the agent edits it live while it talks.
+- **Human-in-the-loop approval** — the agent pauses and resumes on the user's answer.
+- **Extra message types** — table, chart, follow-up, suggested questions, citations, form.
 
-- **Ajan → generator + `asend` ile onay.** Ajan bir async generator; onayda
-  `decision = yield ApprovalRequested(...)` yapıp kararı **generator'ın send
-  kanalından** geri alır. Böylece ajan protokolü hiç bilmez, yalnız translator
-  event üretir.
+Long-term goal: run the agents on AWS Bedrock **AgentCore**, the app on **EKS**,
+identity via **Microsoft Entra**, and model calls through a **GenAI Marketplace**
+gateway. Phase 1 (local) is done; Phase 2/3 assets are prepared but not deployed.
 
-- **İki AG-UI client (custom + CopilotKit), `NEXT_PUBLIC_CLIENT` ile seçilir.**
-  - `custom` (varsayılan): `lib/agui.ts`'te elle yazılmış SSE client + Zustand
-    store + elle kartlar + canlı Event Inspector. **HITL ve canvas burada uçtan
-    uca çalışıyor.**
-  - `copilotkit`: CopilotKit provider + CopilotChat + `useCopilotAction` kartları,
-    `/api/copilotkit` runtime route'u AG-UI `HttpAgent` ile backend'e köprü.
-  - **Neden ikisi birden?** Plan CopilotKit'i "birincil", `@ag-ui/client` +
-    elle pane'i "onaylı fallback" olarak veriyordu. Bizim HITL tasarımımız
-    (tek suspend edilen run + `/agui/resume`) CopilotKit'in native multi-run
-    HITL'ine birebir uymuyor; custom client bunu tam çalıştırıyor. CopilotKit'i
-    de kullanıcı açıkça istediği için ekledik — kartlar `useCopilotAction` ile
-    tanımlı, derleme doğrulandı, tam runtime doğrulaması tarayıcı ister.
-
-- **CopilotKit 1.4.4 → 1.62.2 yükseltmesi.** 1.4.4 npm tarball'u **`dist`
-  içermiyordu** (source-only), import edilemiyordu → `next build` kırılırdı.
-  1.62.2 düzgün `dist` ile geliyor. Peer-dep çakışması yüzünden `npm install
-  --legacy-peer-deps` gerekiyor (`@langchain/langgraph-sdk` peerOptional).
-
-- **Senaryo ajanları ayrı `agents/` paketinde.** Kullanıcı "ayrı klasör" istedi.
-  Dört scripted ajan (research/doc-writer/data-analyst/support-triage), her biri
-  farklı kart kombinasyonu. Backend `build_agent`, `forwardedProps.agentId`'ye
-  göre yönlendirir. Aynı translator'ı kullandıkları için AgentCore'a da uygun.
-
-- **Scripted ajanlar (gerçek LLM değil).** Marketplace kimlik bilgisi olmadan
-  demo çalışsın diye ajanlar deterministik. Kart gösterme "kararı" şu an =
-  hangi ajanın/senaryonun seçildiği. Gerçek LLM tool-calling yolu #7'de.
-
-- **In-memory HITL resume.** `run_id` anahtarlı `asyncio.Event`. Karar run
-  suspend noktasına varmadan da gelebildiği için registry **sıra-bağımsız**
-  (karar buffer'lanır). Prod'da dayanıklı workflow motoru gerekir (Temporal
-  bilinçli olarak kullanılmadı — demo kapsamı).
-
-- **Vendor-agnostik model yolu.** `app/llm/factory.build_llm` tek giriş; provider
-  `LLM_PROVIDER` ile seçilir (Claude/OpenAI/Gemini/Marketplace), hepsi aynı
-  `stream_completion` arayüzünü sunar. Sebep: ajanların herhangi bir LLM
-  vendor'ıyla çalışabilmesi. Şu an yalnız metin streaming; tool-calling #7.
-
-- **Kimlik header'dan, asla `RunAgentInput`'tan.** dev stub + Entra bearer
-  doğrulama kodu yazıldı; Entra gerçek tenant'la test edilmedi.
-
-- **Persistence: Postgres, swap edilebilir repository arkasında.** SQLite ile
-  uçtan uca test edildi.
-
-- **İzolasyon kuralı.** Paketler hep venv (`backend/.venv`) / `node_modules`'a;
-  global kurulum yok. `.claude/settings.json` global-install'ları hard-deny eder.
-  Harici servislere bağlanma (AWS/Marketplace/GitHub) bu kapsamda değil.
-
-- **AWS: root sadece bir kez.** `deploy/aws/bootstrap_iam.sh` root ile bir kez
-  scoped `agui-deployer` IAM kullanıcısı oluşturur; sonra hep o profil, asla root.
-
-- **Çoklu-araç agent config.** `AGENTS.md` kanonik (Antigravity + Claude Code);
-  `CLAUDE.md` onu `@import` eder → drift yok. `.claude/` ve `.agents/` paralel.
+The original build spec is the plan the user first provided (the document that
+started this repo). Its summary lives in `README.md` and under `docs/`.
 
 ---
 
-## 3. Mevcut durum
+## 2. What we did and why (decision log)
 
-### Çalışan ve doğrulanmış (yerelde)
-| Özellik | Durum | Nasıl doğrulandı |
+This section answers the "why is it like this?" questions in the codebase. A new
+session gains the most context here.
+
+- **One event source (`translator.py`).** All AG-UI protocol events are emitted
+  from one place. Agents produce framework-neutral *semantic* events
+  (`TextDelta`, `ToolCallStarted`, `DocumentDelta`, `ApprovalRequested`); the
+  translator maps them to the protocol and enforces ordering/pairing. Reason:
+  guarantee protocol correctness in one place and keep agents pure.
+
+- **Agent → generator + approval via `asend`.** The agent is an async generator;
+  for approval it does `decision = yield ApprovalRequested(...)` and receives the
+  decision back through the generator's send channel. So the agent never knows
+  the protocol; only the translator emits events.
+
+- **Two AG-UI clients (custom + CopilotKit), selected by `NEXT_PUBLIC_CLIENT`.**
+  - `custom` (default): a hand-built SSE client in `lib/agui.ts` + a Zustand
+    store + hand-built cards + a live Event Inspector. **HITL and canvas work end
+    to end here.**
+  - `copilotkit`: CopilotKit provider + CopilotChat + `useCopilotAction` cards,
+    the `/api/copilotkit` runtime route bridging to the backend via an AG-UI
+    `HttpAgent`.
+  - **Why both?** The plan named CopilotKit "primary" and `@ag-ui/client` + a
+    hand-built pane the "sanctioned fallback". Our HITL design (one suspended run
+    + `/agui/resume`) does not match CopilotKit's native multi-run HITL; the
+    custom client runs it fully. CopilotKit was also added because the user asked
+    for it — cards are defined via `useCopilotAction`, build-verified; full
+    runtime verification needs a browser.
+
+- **CopilotKit 1.4.4 → 1.62.2 upgrade.** The 1.4.4 npm tarball **had no `dist`**
+  (source-only), could not be imported → `next build` broke. 1.62.2 ships a
+  proper `dist`. A peer-dependency conflict means `npm install
+  --legacy-peer-deps` is required (`@langchain/langgraph-sdk` peerOptional).
+
+- **Scenario agents in a separate `agents/` package.** The user asked for a
+  "separate folder". Four scripted agents (research/doc-writer/data-analyst/
+  support-triage), each a different card combination. Backend `build_agent`
+  routes by `forwardedProps.agentId`. Because they reuse the same translator,
+  they are AgentCore-deployable too.
+
+- **Scripted agents (not a real LLM).** So the demo runs without Marketplace
+  credentials, the agents are deterministic. The card "decision" is currently =
+  which agent/scenario was selected. The real LLM tool-calling path is #7.
+
+- **In-memory HITL resume.** An `asyncio.Event` keyed by `run_id`. Because the
+  decision can arrive before the run reaches its suspend point, the registry is
+  **order-independent** (the decision is buffered). Production would need a
+  durable workflow engine (Temporal was deliberately not used — demo scope).
+
+- **Vendor-agnostic model path.** `app/llm/factory.build_llm` is the single
+  entry; the provider is selected by `LLM_PROVIDER` (Claude/OpenAI/Gemini/
+  Marketplace), all exposing the same `stream_completion` interface. Reason: the
+  agents must work with any LLM vendor. Only text streaming so far; tool-calling
+  is #7.
+
+- **Identity from the bearer, never from `RunAgentInput`.** dev stub + Entra
+  bearer validation code written; Entra not tested against a real tenant.
+
+- **Persistence: Postgres behind a swappable repository.** Verified end to end
+  with SQLite.
+
+- **Isolation rule.** Packages always go into a venv (`backend/.venv`) /
+  `node_modules`; no global installs. `.claude/settings.json` hard-denies global
+  installs. Connecting to external services (AWS/Marketplace/GitHub) is out of
+  scope for this rule.
+
+- **AWS: root only once.** `deploy/aws/bootstrap_iam.sh` uses root once to create
+  a scoped `agui-deployer` IAM user; after that always that profile, never root.
+
+- **Multi-tool agent config.** `AGENTS.md` is canonical (Antigravity + Claude
+  Code); `CLAUDE.md` `@import`s it → no drift. `.claude/` and `.agents/` mirror.
+
+---
+
+## 3. Current status
+
+### Working and verified (locally)
+| Feature | Status | How verified |
 |---|---|---|
-| Streaming chat, tool card, table, chart, follow-up, suggested, citations, form | ✅ | 5 ajan yolu HTTP/SSE üzerinden koşuldu, hepsi lint-temiz |
-| Canvas (custom client) | ✅ | STATE_SNAPSHOT/DELTA uçtan uca |
-| HITL onay (custom client) | ✅ | `/agui/resume` ile suspend/resume, approve+reject |
-| Persistence | ✅ | SQLite ile create/list/load + tool_events_json |
-| Event capture + ordering lint | ✅ | `pytest` 4/4, `docs/sample_run_log.jsonl` lint-temiz |
-| Backend/frontend catalog parity (8 tool) | ✅ | `smoke_e2e.py` statik karşılaştırma |
-| tsc + eslint + next build (iki client) | ✅ | |
-| Scenario routing (`agentId`) | ✅ | 4 senaryo + mock default |
-| Vendor-agnostik LLM (Claude/OpenAI/Gemini/Marketplace) | ✅ | `test_llm_providers.py` her vendor SSE parse'ı (mock HTTP), 8/8 test |
-| AWS güvenli-flow varlıkları (deploy/aws) | ✅ hazır | policy JSON geçerli, script bash -n temiz (deploy edilmedi) |
+| Streaming chat, tool card, table, chart, follow-up, suggested, citations, form | ✅ | 5 agent paths driven over HTTP/SSE, all lint-clean |
+| Canvas (custom client) | ✅ | STATE_SNAPSHOT/DELTA end to end |
+| HITL approval (custom client) | ✅ | suspend/resume via `/agui/resume`, approve+reject |
+| Persistence | ✅ | create/list/load + tool_events_json with SQLite |
+| Event capture + ordering lint | ✅ | `pytest` green, `docs/sample_run_log.jsonl` lint-clean |
+| Backend/frontend catalog parity (8 tools) | ✅ | static comparison in `smoke_e2e.py` |
+| tsc + eslint + next build (both clients) | ✅ | |
+| Scenario routing (`agentId`) | ✅ | 4 scenarios + mock default |
+| Vendor-agnostic LLM (Claude/OpenAI/Gemini/Marketplace) | ✅ | `test_llm_providers.py` each vendor's SSE parse (mock HTTP), 8/8 tests |
+| AWS safe-flow assets (deploy/aws) | ✅ prepared | policy JSON valid, script `bash -n` clean (not deployed) |
 
-### Yazıldı ama tam doğrulanmadı (bu ortamda imkânsızdı)
-| Özellik | Neden doğrulanmadı |
+### Written but not fully verified (impossible in this environment)
+| Feature | Why not verified |
 |---|---|
-| CopilotKit HITL round-trip + canvas | **Tarayıcı yok** — sadece derleme/bundling doğrulandı |
-| Docker imaj build'i (backend + agentcore) | **Docker daemon yok** — layout dosya-sistemi simülasyonuyla doğrulandı |
-| Gerçek LLM (`AGENT_MODE=langgraph`) | **Marketplace anahtarı yok** |
-| Entra sign-in | **Azure AD app registration yok** |
-| Helm render | **helm CLI yok** — value referansları statik doğrulandı |
+| CopilotKit HITL round-trip + canvas | **No browser** — only compile/bundling verified |
+| Docker image build (backend + agentcore) | **No Docker daemon** — verified by simulating the layout on the filesystem |
+| Real LLM (`AGENT_MODE=langgraph`) | **No Marketplace key** |
+| Entra sign-in | **No Azure AD app registration** |
+| Helm render | **No helm CLI** — value references checked statically |
 
 ---
 
-## 4. Mimari ve uçtan uca akış
+## 4. Architecture and end-to-end flow
 
 ```
 FRONTEND (Next.js)                         BACKEND (FastAPI)
@@ -154,83 +157,82 @@ FRONTEND (Next.js)                         BACKEND (FastAPI)
    ├ AgentList / HistoryList (sidebar)         │
    ├ ChatArea (custom)  |  CopilotChat          ▼
    │   store.ts (Zustand reducer)            factory.build_agent(agentId)
-   │   catalog.ts (ortak tool sözleşmesi)       │  (mock | langgraph | scenario)
-   │   kart component'leri                       ▼
-   └ lib/agui.ts (SSE oku)  <──SSE─────  translator.stream()  ← TEK event kaynağı
-                                              │   ajan.run(input) → semantik events
+   │   catalog.ts (shared tool contract)        │  (mock | langgraph | scenario)
+   │   card components                           ▼
+   └ lib/agui.ts (read SSE)  <──SSE─────  translator.stream()  ← THE event source
+                                              │   agent.run(input) → semantic events
                                               ▼
                                           EventEncoder → "data: {...}\n\n"
 ```
 
-**"analyze my events" (Data Analyst seçili) örneği, adım adım:**
-1. `ChatArea.send()` → gerekiyorsa `POST /conversations`, kullanıcı mesajını
-   optimistic basar, `RunAgentInput` kurar (`tools`=8 şema, `forwardedProps.agentId`).
+**"analyze my events" (Data Analyst selected), step by step:**
+1. `ChatArea.send()` → if needed `POST /conversations`, optimistically renders the
+   user message, builds `RunAgentInput` (`tools` = 8 schemas, `forwardedProps.agentId`).
 2. `runAgent()` → `fetch POST /agui/run` (+ bearer).
-3. Backend: `get_current_principal` (dev: sabit), `agentId` okunur,
-   `build_agent(..., "data-analyst")` → `DataAnalystAgent`. Kullanıcı turu Postgres'e.
-4. `DataAnalystAgent.run()` semantik event yield eder: TextDelta, ToolCallStarted
+3. Backend: `get_current_principal` (dev: fixed), reads `agentId`,
+   `build_agent(..., "data-analyst")` → `DataAnalystAgent`. User turn to Postgres.
+4. `DataAnalystAgent.run()` yields semantic events: TextDelta, ToolCallStarted
    (renderTable), **ToolCallStarted (renderChart)**, renderFollowUp, renderSuggested.
-5. `translator.stream()` bunları AG-UI event'lerine çevirir: RUN_STARTED →
-   STATE_SNAPSHOT → TEXT_MESSAGE_* → (metni kapat) → TOOL_CALL_START/ARGS/END …
-   → RUN_FINISHED. Her event `run_logs/<run_id>.jsonl`'e yazılır + loglanır.
-6. `EventEncoder` SSE frame'i üretir; `_sse_with_keepalive` arka planda pompalar.
-7. Frontend `lib/agui.ts` stream'i parse eder, `store.handleEvent(event)`.
-8. `handleEvent` reducer: renderChart TOOL_CALL_START → boş `{kind:"chart"}`
-   placeholder; TOOL_CALL_ARGS birikir; TOOL_CALL_END → parse → chart doldurulur.
+5. `translator.stream()` maps them to AG-UI events: RUN_STARTED → STATE_SNAPSHOT →
+   TEXT_MESSAGE_* → (close text) → TOOL_CALL_START/ARGS/END … → RUN_FINISHED. Each
+   event is written to `run_logs/<run_id>.jsonl` and logged.
+6. `EventEncoder` produces the SSE frame; `_sse_with_keepalive` pumps in the background.
+7. Frontend `lib/agui.ts` parses the stream, calls `store.handleEvent(event)`.
+8. `handleEvent` reducer: renderChart TOOL_CALL_START → empty `{kind:"chart"}`
+   placeholder; TOOL_CALL_ARGS accumulates; TOOL_CALL_END → parse → chart filled.
 9. `ChatArea` `item.kind==="chart"` → `<ChartCard>` → **inline SVG bar chart**.
 
-**"Chart'a nasıl karar veriliyor?"** Şu an üç mekanizma var:
-- **Senaryo ajanı**: karar yok, ajan kart setini hep gösterir; asıl karar =
-  kullanıcının seçtiği ajan.
-- **LangGraph ajanı** (`agent/graph.py`): `_plan_node` keyword-heuristic
-  (mesajda "table"/"compare" → tablo; şu an **chart bayrağı yok**).
-- **Gerçek LLM (henüz bağlı değil)**: AG-UI'ın asıl yolu — `tools` şemaları
-  modele verilir, model **function calling** ile hangi tool'u çağıracağına karar
-  verir. Bu #7.
+**"How is the chart decided?"** There are three mechanisms today:
+- **Scenario agent**: no decision, the agent always shows its card set; the real
+  decision = which agent the user selected.
+- **LangGraph agent** (`agent/graph.py`): `_plan_node` keyword heuristic ("table"/
+  "compare" in the message → table; **there is no chart flag yet**).
+- **Real LLM (not wired yet)**: AG-UI's true path — the `tools` schemas are given
+  to the model, and the model decides which tool to call via **function calling**.
+  This is #7.
 
-Detaylı anlatım gerekiyorsa: son session'daki Türkçe mimari açıklaması bu
-dokümanın temelidir; `docs/PROJECT_STATUS_AND_ROADMAP.md` de tamamlar.
+For a deeper walkthrough, `docs/PROJECT_STATUS_AND_ROADMAP.md` complements this.
 
 ---
 
-## 5. Repo haritası
+## 5. Repo map
 
 ```
 backend/app/
-  main.py                  FastAPI app, CORS, router'lar, lifespan (create_all)
-  config/settings.py       pydantic-settings, TÜM env buradan (tek Settings)
+  main.py                  FastAPI app, CORS, routers, lifespan (create_all)
+  config/settings.py       pydantic-settings, ALL env here (single Settings)
   api/agui_router.py       POST /agui/run (SSE), /agui/resume, /agui/runs/{id}/log
   api/conversations.py     GET/POST /conversations, GET /conversations/{id}
-  api/agents.py            GET /agents (senaryo listesi)
-  agui/translator.py       ★ TEK event kaynağı — burada protokol üretilir
-  agui/catalog.py          ★ 8 frontend-tool şeması (backend tarafı)
-  agui/resume.py           in-memory HITL resume registry (sıra-bağımsız)
-  agui/lint.py             ordering lint (pairing/sıralama)
-  agui/run_capture.py      run_logs/<run_id>.jsonl yazma + okuma
-  agent/factory.py         build_agent(settings, agent_id) — yönlendirme
-  agent/graph.py           LangGraphAgent (gerçek model yolu, plan node + stream)
-  agent/mock.py            MockAgent (scripted showcase, tüm kartlar)
+  api/agents.py            GET /agents (scenario list)
+  agui/translator.py       ★ THE event source — the protocol is produced here
+  agui/catalog.py          ★ 8 frontend-tool schemas (backend side)
+  agui/resume.py           in-memory HITL resume registry (order-independent)
+  agui/lint.py             ordering lint (pairing/sequence)
+  agui/run_capture.py      write + read run_logs/<run_id>.jsonl
+  agent/factory.py         build_agent(settings, agent_id) — routing
+  agent/graph.py           LangGraphAgent (real model path, plan node + stream)
+  agent/mock.py            MockAgent (scripted showcase, all cards)
   agent/tools.py           lookup_knowledge (demo backend tool)
-  agent/events.py          semantik event dataclass'ları
+  agent/events.py          semantic event dataclasses
   agent/base.py            latest_user_text, initial_state
-  llm/factory.py           ★ build_llm(settings) — TEK model yolu, provider seçer
+  llm/factory.py           ★ build_llm(settings) — THE model path, selects provider
   llm/base.py              LLMClient protocol + split_system helper
-  llm/openai_compatible.py OpenAI-uyumlu çekirdek (stream/chunked)
-  llm/marketplace.py       Marketplace gateway (openai_compatible sarmalayıcı)
+  llm/openai_compatible.py OpenAI-compatible core (stream/chunked)
+  llm/marketplace.py       Marketplace gateway (openai_compatible wrapper)
   llm/openai_provider.py   OpenAI
   llm/anthropic_provider.py  Claude (Messages API SSE)
   llm/gemini_provider.py   Gemini (streamGenerateContent SSE)
   db/models.py             Conversation, Message (SQLAlchemy)
   db/session.py            async engine, session_scope
   db/repository.py         HistoryRepository (Protocol) + SqlAlchemy impl
-  auth/entra.py            get_current_principal (dev stub | Entra JWKS doğrulama)
+  auth/entra.py            get_current_principal (dev stub | Entra JWKS validation)
   logging/setup.py         structlog
-backend/tests/test_event_order.py   translator + HITL + lint testleri
-backend/tests/test_llm_providers.py  her vendor'ın SSE parse'ı (mock HTTP)
-backend/scripts/smoke_e2e.py         ★ uçtan uca SSE smoke (exit-code'lu)
+backend/tests/test_event_order.py   translator + HITL + lint tests
+backend/tests/test_llm_providers.py  each vendor's SSE parse (mock HTTP)
+backend/scripts/smoke_e2e.py         ★ end-to-end SSE smoke (exit-coded)
 
-agents/                    ★ senaryo ajanları (ayrı paket)
-  registry.py              id → sınıf, scenario_descriptors()
+agents/                    ★ scenario agents (separate package)
+  registry.py              id → class, scenario_descriptors()
   research_assistant.py    lookup+table+citations+suggested
   doc_writer.py            canvas+followup+approval
   data_analyst.py          table+chart+followup+suggested
@@ -238,54 +240,54 @@ agents/                    ★ senaryo ajanları (ayrı paket)
   _common.py               tokens(), call_id()
 
 frontend/
-  app/page.tsx             workspace, NEXT_PUBLIC_CLIENT ile client seçimi
-  app/providers.tsx        agents/conversations yükler (CopilotKit sarmalanabilir)
+  app/page.tsx             workspace, client selection via NEXT_PUBLIC_CLIENT
+  app/providers.tsx        loads agents/conversations (CopilotKit can wrap it)
   app/api/copilotkit/route.ts     CopilotKit runtime → HttpAgent → /agui/run
-  app/api/copilotkit/agentName.ts COPILOT_AGENT_NAME (client/server ayrımı için)
+  app/api/copilotkit/agentName.ts COPILOT_AGENT_NAME (client/server split)
   lib/agui.ts              ★ custom SSE client (runAgent, resumeRun)
   lib/store.ts             ★ Zustand reducer (handleEvent) — event→UI
-  lib/catalog.ts           ★ 8 tool şeması (frontend tarafı, backend ile birebir)
-  lib/api.ts               conversations/agents fetch helper'ları
-  lib/auth.ts              getBearerToken (dev stub; MSAL yeri hazır)
-  components/chat/ChatArea.tsx      composer + item render + send orkestrasyonu
+  lib/catalog.ts           ★ 8 tool schemas (frontend side, mirrors backend)
+  lib/api.ts               conversations/agents fetch helpers
+  lib/auth.ts              getBearerToken (dev stub; MSAL slot ready)
+  components/chat/ChatArea.tsx      composer + item render + send orchestration
   components/catalog/*.tsx          ToolCard, TableCard, ChartCard, FollowUpCard,
                                      CitationsCard, FormCard, ApprovalCard, Suggested
   components/canvas/CanvasPanel.tsx Tiptap canvas (custom client)
-  components/inspector/EventInspector.tsx  canlı AG-UI event akışı (dev view)
+  components/inspector/EventInspector.tsx  live AG-UI event stream (dev view)
   components/copilot/               CopilotChatArea, CopilotGenerativeUI,
                                      CopilotCanvasPanel (useCoAgent)
 
-deploy/agentcore/          Faz 2: agentcore_app.py (/ping,/invocations) + Dockerfile
-deploy/eks/                Faz 3: Helm chart (backend/frontend/ingress/config)
+deploy/agentcore/          Phase 2: agentcore_app.py (/ping,/invocations) + Dockerfile
+deploy/eks/                Phase 3: Helm chart (backend/frontend/ingress/config)
 deploy/aws/                IAM policy + bootstrap_iam.sh + README (root-once flow)
-scripts/check_env.sh       ★ ön koşul kontrolü (Python/Node/npm/Docker/venv)
+scripts/check_env.sh       ★ prerequisite check (Python/Node/npm/Docker/venv)
 docs/                      FINDINGS, PROJECT_STATUS_AND_ROADMAP, sample_run_log
 
-Agent tooling (çoklu araç):
-  AGENTS.md                ★ kanonik cross-tool rehber (Antigravity+Claude+…)
-  CLAUDE.md                @AGENTS.md import + Claude-özel
-  .claude/agents/          subagent'lar (card-type-builder, scenario-agent-builder, agui-verifier)
+Agent tooling (multi-tool):
+  AGENTS.md                ★ canonical cross-tool guide (Antigravity+Claude+…)
+  CLAUDE.md                @AGENTS.md import + Claude-specific
+  .claude/agents/          subagents (card-type-builder, scenario-agent-builder, agui-verifier)
   .claude/commands/        /check /verify /smoke /run /build /add-card /new-scenario /aws-bootstrap
-  .claude/settings.json    izin allow + global-install deny
-  .agents/rules/           Antigravity always-on kurallar (start/invariants/verify/isolation/aws)
-  .agents/workflows/       aynı 8 slash workflow
+  .claude/settings.json    permission allow + global-install deny
+  .agents/rules/           Antigravity always-on rules (start/invariants/verify/isolation/aws/collaboration)
+  .agents/workflows/       the same 8 slash workflows
 README.md, TODO.md, .env.example, docker-compose.yml, .gitignore, .dockerignore
 ```
 
 ---
 
-## 6. Local'de nasıl çalıştırılır ve doğrulanır
+## 6. How to run and verify locally
 
-Gereksinim: Python 3.11, Node 20+ (bu repo 22 ile de çalıştı), Docker (Postgres için).
+Prerequisites: Python 3.11, Node 20+ (this repo also ran on 22), Docker (for Postgres).
 
 ```bash
-# 0. ön koşulları kontrol et (Python 3.11+, Node 20+, npm, Docker, .env, venv)
-bash scripts/check_env.sh   # veya /check
+# 0. check prerequisites (Python 3.11+, Node 20+, npm, Docker, .env, venv)
+bash scripts/check_env.sh   # or /check
 
 # 0b. env
-cp .env.example .env       # varsayılanlar: AGENT_MODE=mock, AUTH_MODE=dev, NEXT_PUBLIC_CLIENT=custom
+cp .env.example .env       # defaults: AGENT_MODE=mock, AUTH_MODE=dev, NEXT_PUBLIC_CLIENT=custom
 
-# 1. Postgres (opsiyonel; yoksa run'lar akar ama history olmaz)
+# 1. Postgres (optional; without it runs still stream, but there is no history)
 docker compose up -d postgres
 
 # 2. Backend
@@ -293,222 +295,226 @@ cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 uvicorn app.main:app --reload --port 8000
-# sağlık: curl localhost:8000/health
+# health: curl localhost:8000/health
 
-# 3. Frontend (ayrı terminal)
+# 3. Frontend (separate terminal)
 cd frontend
-npm install --legacy-peer-deps      # CopilotKit peer-dep çakışması için --legacy-peer-deps
+npm install --legacy-peer-deps      # CopilotKit peer-dep conflict needs --legacy-peer-deps
 npm run dev                          # http://localhost:3000
 ```
 
-Demo denemesi: sidebar'dan bir ajan seç, şunu yaz:
+Demo prompt: select an agent in the sidebar and type:
 `explain ag-ui, compare the types, next steps, draft a note then approve`
 
-CopilotKit client'ı denemek için `.env`: `NEXT_PUBLIC_CLIENT=copilotkit`.
+To try the CopilotKit client, set `NEXT_PUBLIC_CLIENT=copilotkit` in `.env`.
 
-**Doğrulama komutları:**
+**Verification commands:**
 ```bash
-cd backend && source .venv/bin/activate && pytest -q          # 4/4 geçmeli
-cd backend && source .venv/bin/activate && python scripts/smoke_e2e.py  # uçtan uca SSE smoke
+cd backend && source .venv/bin/activate && pytest -q          # should pass
+cd backend && source .venv/bin/activate && python scripts/smoke_e2e.py  # end-to-end SSE smoke
 cd frontend && npm run typecheck && npm run lint && npm run build
 ```
 
-**Agent kurulumu (çoklu araç için hazır):**
-- `AGENTS.md` (kök) — **kanonik**, cross-tool agent rehberi (Antigravity + Claude
-  Code + diğerleri okur). Tek doğruluk kaynağı; içeriği başka yere kopyalama.
-- **Antigravity**: `.agents/rules/` (always-on kurallar: start-here, invariants,
-  verify, **isolation**, **aws**) + `.agents/workflows/` (8 slash workflow).
-  Not: bazı Antigravity sürümleri workflow'ları `.agent/workflows/` (tekil)
-  okuyor; workflow yok sayılırsa klasörü yeniden adlandır.
-- **Claude Code**: `CLAUDE.md` (`@AGENTS.md` import eder — drift olmaz), proje
-  hafızası; `.claude/settings.json` global-install deny + izin allow'u.
-- `.claude/agents/` — subagent'lar: `card-type-builder`, `scenario-agent-builder`,
+**Agent tooling (ready for multiple tools):**
+- `AGENTS.md` (root) — **canonical**, cross-tool agent guide (read by Antigravity,
+  Claude Code, and others). Single source of truth; do not copy its content elsewhere.
+- **Antigravity**: `.agents/rules/` (always-on rules: start-here, invariants,
+  verify, **isolation**, **aws**, **collaboration**) + `.agents/workflows/` (8
+  slash workflows). Note: some Antigravity versions read `.agent/workflows/`
+  (singular); if a workflow is ignored, rename the folder.
+- **Claude Code**: `CLAUDE.md` (`@AGENTS.md` import → no drift), project memory;
+  `.claude/settings.json` global-install deny + permission allow.
+- `.claude/agents/` — subagents: `card-type-builder`, `scenario-agent-builder`,
   `agui-verifier`.
-- **8 komut (Claude + Antigravity)**: `/check` (ön koşul), `/verify`, `/smoke`,
-  `/run` (dev), `/build` (Docker imaj), `/add-card`, `/new-scenario`,
-  `/aws-bootstrap` (root ile bir kez IAM deployer).
-- **Kurallar**: paketler hep venv/node_modules'a (global kurulum yok); AWS hep
-  `agui-deployer` profili (root sadece bootstrap'ta). Ayrıntı: `AGENTS.md`.
-- `.claude/settings.json` — sık dev komutları için izin listesi (prompt azaltır).
-- `backend/scripts/smoke_e2e.py` — committed uçtan uca doğrulama (exit code'lu).
+- **8 commands (Claude + Antigravity)**: `/check` (prerequisites), `/verify`,
+  `/smoke`, `/run` (dev), `/build` (Docker images), `/add-card`, `/new-scenario`,
+  `/aws-bootstrap` (root-once IAM deployer).
+- **Rules**: packages always into venv/node_modules (no global installs); AWS
+  always the `agui-deployer` profile (root only at bootstrap). Details: `AGENTS.md`.
+- `backend/scripts/smoke_e2e.py` — committed end-to-end verification (exit-coded).
 
 ---
 
-## 7. Bilinen tuzaklar
+## 7. Known gotchas
 
-Bu ortamda debug ederken bulundu; yeni session'da hatırla:
+Found while debugging in this environment; remember them in a new session:
 
-1. **`agents/` paketi import edilebilir olmalı.** Backend `pip install -e` ile
-   sadece `app`'i path'e koyar. `agent/factory.py::ensure_agents_on_path()`
-   yukarı yürüyerek `agents/registry.py`'yi bulur ve dizini path'e ekler.
-   Docker imajlarında `agents/` **kopyalanmalı** — bu yüzden `backend/Dockerfile`
-   repo kökünden build edilir (`docker build -f backend/Dockerfile .`).
-2. **structlog reserved key.** `log.info("event_name", event=...)` çakışır;
-   kwarg'ı `event_type` yaptık.
-3. **HITL resume yarışı.** Karar suspend'ten önce gelebilir; `resume.py` kararı
-   buffer'lar. Bunu bozma.
-4. **SSE keepalive generator'ı iptal etmemeli.** `_sse_with_keepalive` ajanı
-   arka plan task'ında pompalar; timeout yalnız queue okumasını etkiler.
-5. **CopilotKit 1.4.x source-only.** 1.62.2 kullan; `--legacy-peer-deps` gerekli.
-6. **Custom client HITL ≠ CopilotKit HITL.** Custom = tek run + `/agui/resume`.
-   CopilotKit modunda onay args'ına `runId` enjekte edilip `resumeRun` köprüsü
-   çağrılıyor; bu tarayıcıda test edilmeli.
-7. **`.dockerignore` (repo kökü)** frontend/docs/venv'i imaj context'inden hariç
-   tutar; backend imajı büyümesin diye.
-
----
-
-## 8. Eksikler ve yapılacaklar
-
-Canlı liste: `TODO.md`. Öncelik sırasıyla kalanlar:
-
-- **#7 LLM tool-calling** — model *karar versin* (chart mı table mı) + senaryo
-  ajanlarını gerçek modelle besle. **Vendor katmanı hazır** (Claude/OpenAI/Gemini),
-  sadece tool-calling eklenip bir provider key'i verilecek.
-- **#9 Entra sign-in uçtan uca** — Azure AD app registration gerekir.
-- **#10 AgentCore + EKS deploy** — önce `/aws-bootstrap` (root ile bir kez), sonra
-  `agui-deployer` profiliyle deploy.
-- **CopilotKit HITL/canvas tarayıcı doğrulaması** — #4/#5 kod hazır, gözle test.
-- **#11 Dayanıklı HITL + replay dashboard** — büyük, opsiyonel.
+1. **The `agents/` package must be importable.** Backend `pip install -e` only
+   puts `app` on the path. `agent/factory.py::ensure_agents_on_path()` walks up to
+   find `agents/registry.py` and adds the directory to the path. Docker images
+   **must copy** `agents/` — that is why `backend/Dockerfile` builds from the repo
+   root (`docker build -f backend/Dockerfile .`).
+2. **structlog reserved key.** `log.info("event_name", event=...)` collides; we
+   named the kwarg `event_type`.
+3. **HITL resume race.** The decision can arrive before the suspend; `resume.py`
+   buffers it. Do not break this.
+4. **The SSE keepalive must not cancel the generator.** `_sse_with_keepalive`
+   pumps the agent in a background task; the timeout only affects the queue read.
+5. **CopilotKit 1.4.x is source-only.** Use 1.62.2; `--legacy-peer-deps` required.
+6. **Custom-client HITL ≠ CopilotKit HITL.** Custom = one run + `/agui/resume`.
+   In CopilotKit mode `runId` is injected into the approval args and the
+   `resumeRun` bridge is called; this must be tested in a browser.
+7. **Root `.dockerignore`** excludes frontend/docs/venv from the image context so
+   the backend image stays small.
 
 ---
 
-## 9. İmplementasyon planı
+## 8. Gaps and remaining work
 
-### #7 — Gerçek LLM tool-calling (öncelikli)
-**Amaç:** "chart mı table mı?" kararını heuristic yerine modele bıraktırmak.
-**Not:** Vendor-agnostik model yolu ARTIK HAZIR — `LLM_PROVIDER` ile Claude/OpenAI/
-Gemini/Marketplace seçiliyor (`app/llm/factory.build_llm`, hepsi
-`stream_completion` sunar, `test_llm_providers.py` ile parse doğrulandı). Kalan iş
-sadece tool-calling'i eklemek:
+Live list: `TODO.md`. Remaining, in priority order:
+
+- **#7 LLM tool-calling** — let the model *decide* (chart vs table) + power the
+  scenario agents with a real model. **The vendor layer is ready** (Claude/OpenAI/
+  Gemini); only tool-calling needs to be added plus a provider key.
+- **#9 Entra sign-in end to end** — needs an Azure AD app registration.
+- **#10 AgentCore + EKS deploy** — first `/aws-bootstrap` (root, once), then
+  deploy with the `agui-deployer` profile.
+- **CopilotKit HITL/canvas browser verification** — #4/#5 code ready, needs a look.
+- **#11 Durable HITL + replay dashboard** — large, optional.
+
+---
+
+## 9. Implementation plan
+
+### #7 — Real LLM tool-calling (priority)
+**Goal:** let the model, not a heuristic, decide "chart or table?".
+**Note:** the vendor-agnostic model path is ALREADY DONE — `LLM_PROVIDER` selects
+Claude/OpenAI/Gemini/Marketplace (`app/llm/factory.build_llm`, all expose
+`stream_completion`, parsing verified by `test_llm_providers.py`). Remaining work
+is just adding tool-calling:
 1. `.env`: `AGENT_MODE=langgraph`, `LLM_PROVIDER=anthropic|openai|gemini|marketplace`
-   ve ilgili `*_API_KEY`/`*_MODEL` doldur.
-2. `app/llm/openai_compatible.py`'ye (OpenAI/Marketplace için) tool-calling ekle:
-   payload'a `tools` (RunAgentInput.tools → OpenAI function şeması) + `tool_choice`,
-   stream'de `choices[].delta.tool_calls` biriktir. Anthropic/Gemini için de kendi
-   tool formatları (Anthropic `tools`+`tool_use` blokları; Gemini `functionDeclarations`).
-3. `agent/graph.py::LangGraphAgent.run()`: modelin döndürdüğü `tool_calls`'ı
-   `ToolCallStarted(name, args)` semantik event'lerine map et. Frontend-render
-   tool'ları (renderChart/renderTable/...) için `ToolCallCompleted` gerekmez;
-   `lookupKnowledge` gibi backend tool'ları için tool'u çalıştırıp
-   `ToolCallCompleted(result)` yield et, sonucu modele geri besleyip ikinci tur
-   yap (klasik tool-use döngüsü).
-4. Doğrulama: gerçek anahtarla "compare X and Y in a chart" yazıp modelin
-   `renderChart` çağırdığını gör. `lint.py` hâlâ temiz olmalı.
-5. İstersek senaryo ajanlarını da aynı yolla LLM-kararlı yapabiliriz.
+   and the relevant `*_API_KEY`/`*_MODEL`.
+2. Add tool-calling to `app/llm/openai_compatible.py` (for OpenAI/Marketplace):
+   put `tools` (RunAgentInput.tools → OpenAI function schema) + `tool_choice` in
+   the payload, and accumulate `choices[].delta.tool_calls` in the stream. For
+   Anthropic/Gemini use their own tool formats (Anthropic `tools`+`tool_use`
+   blocks; Gemini `functionDeclarations`).
+3. `agent/graph.py::LangGraphAgent.run()`: map the model's returned `tool_calls`
+   to `ToolCallStarted(name, args)` semantic events. Frontend-render tools
+   (renderChart/renderTable/...) need no `ToolCallCompleted`; backend tools like
+   `lookupKnowledge` run the tool, yield `ToolCallCompleted(result)`, and feed the
+   result back for a second turn (the classic tool-use loop).
+4. Verify: with a real key, type "compare X and Y in a chart" and see the model
+   call `renderChart`. `lint.py` must still be clean.
+5. Optionally make the scenario agents LLM-driven the same way.
 
 ### #9 — Entra sign-in
-1. Azure AD'de SPA app registration: redirect `http://localhost:3000`, expose
+1. Azure AD SPA app registration: redirect `http://localhost:3000`, expose an
    API/scope. `.env`: `AUTH_MODE=entra`, `NEXT_PUBLIC_AUTH_MODE=entra`,
    `ENTRA_TENANT_ID/CLIENT_ID/AUDIENCE`, `NEXT_PUBLIC_ENTRA_CLIENT_ID/TENANT_ID/
    REDIRECT_URI/SCOPE`.
-2. `frontend/app/providers.tsx`: `PublicClientApplication` (msal-browser) kur,
-   `MsalProvider` ile sar.
-3. `frontend/lib/auth.ts::acquireEntraToken()`: `acquireTokenSilent`
-   (fallback `loginPopup`) ile access token döndür.
-4. Backend `auth/entra.py` zaten JWKS doğrulaması yapıyor — sadece env dolunca
-   aktif olur. `preferred_username`/`oid` claim'lerini kontrol et.
-5. Doğrulama: giriş yapılmadan uygulama kilitli; history kullanıcıya scope'lu.
+2. `frontend/app/providers.tsx`: set up `PublicClientApplication` (msal-browser),
+   wrap with `MsalProvider`.
+3. `frontend/lib/auth.ts::acquireEntraToken()`: return an access token via
+   `acquireTokenSilent` (fallback `loginPopup`).
+4. Backend `auth/entra.py` already does JWKS validation — it activates once the
+   env is filled. Check the `preferred_username`/`oid` claims.
+5. Verify: the app is locked until sign-in; history is scoped to the user.
 
-### #4/#5 — CopilotKit HITL & canvas tarayıcı doğrulaması
-1. `NEXT_PUBLIC_CLIENT=copilotkit`, backend + frontend ayakta.
-2. Onay senaryosu (doc-writer) çalıştır; Approve/Reject'in hem `respond()` hem
-   `/agui/resume` üzerinden run'ı ilerlettiğini gör. Çift-tetikleme
-   (respond + yeni run) gözlemlenirse: ya `respond()`'u kaldırıp yalnız
-   `/agui/resume` köprüsüne güven, ya da backend'e CopilotKit-native mod ekle
-   (onayda run'ı bitir, sonraki run'da tool-result'ı tüket — ajanları
-   "mesajdan resume" edilebilir yap).
-3. Canvas: `useCoAgent().state.document`'ın STATE_DELTA ile canlı güncellendiğini
-   doğrula.
+### #4/#5 — CopilotKit HITL & canvas browser verification
+1. `NEXT_PUBLIC_CLIENT=copilotkit`, backend + frontend up.
+2. Run the approval scenario (doc-writer); confirm Approve/Reject advances the run
+   via both `respond()` and `/agui/resume`. If a double-trigger (respond + a new
+   run) is observed: either drop `respond()` and rely only on the `/agui/resume`
+   bridge, or add a CopilotKit-native mode in the backend (end the run on
+   approval, consume the tool result on the next run — make agents "resumable
+   from messages").
+3. Canvas: verify `useCoAgent().state.document` updates live from STATE_DELTA.
 
-### #10 — Deploy (manuel)
-0. **Önce AWS bootstrap** (bir kez, root ile): `/aws-bootstrap` veya
-   `bash deploy/aws/bootstrap_iam.sh` → `agui-deployer` IAM kullanıcısı oluşur.
-   Sonra `aws configure --profile agui-deployer`. Bundan sonra **hep bu profil**,
-   asla root (bkz. `deploy/aws/README.md`, `.agents/rules/40-aws.md`).
-1. `deploy/agentcore/README.md` (CLI veya ECR-register) ve `deploy/eks/README.md`
-   adımlarını izle. Backend/agentcore imajını **repo kökünden** build et (`/build`).
-   RDS bağlantısını `values.yaml` secrets'a, `AUTH_MODE=entra` ile.
+### #10 — Deploy (manual)
+0. **First AWS bootstrap** (once, with root): `/aws-bootstrap` or
+   `bash deploy/aws/bootstrap_iam.sh` → creates the `agui-deployer` IAM user. Then
+   `aws configure --profile agui-deployer`. After that **always this profile**,
+   never root (see `deploy/aws/README.md`, `.agents/rules/40-aws.md`).
+1. Follow `deploy/agentcore/README.md` (CLI or ECR-register) and
+   `deploy/eks/README.md`. Build the backend/agentcore image **from the repo
+   root** (`/build`). RDS connection into `values.yaml` secrets, with
+   `AUTH_MODE=entra`.
 
-### #11 — Dayanıklı HITL + replay dashboard (opsiyonel)
-`resume.py`'yi dış store (ör. Redis/DB) ile değiştir; `/agui/runs/{id}/log`'u
-tüketen küçük bir replay/lint UI'ı ekle.
+### #11 — Durable HITL + replay dashboard (optional)
+Replace `resume.py` with an external store (e.g. Redis/DB); add a small replay/
+lint UI that consumes `/agui/runs/{id}/log`.
 
 ---
 
-## 10. Git / branch durumu
+## 10. Git / branch status
 
-- Çalışılan branch: **`main`** (kullanıcı tercihi — her şey tek branch'te güncel).
-- Default branch hâlâ `claude/implement-plan-y2lai0` (kozmetik; içerik `main`'de).
-  Değiştirmek istersen GitHub Settings → Branches → default = `main`.
-- Eski branch'ler silinmedi (kullanıcı istedi).
-- Son anlamlı commit: "Debug pass: fix scenario agents in containers, form race,
-  path resolution" (`db96ea7`).
-- PR akışı bırakıldı; doğrudan `main`'e commit/push ediliyor.
+- Working branch: **`main`** (user preference — everything current on one branch).
+- The default branch is still `claude/implement-plan-y2lai0` (cosmetic; content is
+  on `main`). To change it: GitHub Settings → Branches → default = `main`.
+- Old branches were not deleted (user's choice).
+- PR flow was dropped; commits/pushes go directly to `main`.
 
-**Yeni local session için hızlı başlangıç:**
+**Quick start for a new local session:**
 ```bash
 git clone <repo> && cd aguiDemo
 git checkout main
-# sonra bölüm 6'daki setup + doğrulama adımları
+# then the setup + verification steps in section 6
 ```
 
 ---
 
-## 11. Çalışma günlüğü (work log)
+## 11. Work log
 
-Bu repoda aynı anda birden fazla agent çalışabilir (Claude Code, Antigravity…).
-Bu bölüm işbirliği protokolünün **kanonik kopyasıdır**; `AGENTS.md` ve
-`.agents/rules/50-collaboration.md` yalnızca buraya işaret eder. Work log her
-zaman HANDOFF'un **son bölümüdür**.
+More than one agent may work this repo in parallel (Claude Code, Antigravity, …).
+This section is the **canonical copy** of the collaboration protocol; `AGENTS.md`
+and `.agents/rules/50-collaboration.md` only point here. The work log is always
+the **final section** of HANDOFF.
 
-**Her göreve başlamadan önce:**
-- `git pull` (main), gelen değişiklikleri incele.
-- Aşağıdaki work log'un **en yeni kayıtlarını** oku — başkaları ne yaptı ve
-  "Sırada" alanında ne planladı. Orada sahiplenilmiş bir işi tekrar başlatma.
+**Before starting a task:**
+- `git pull` (main), review the incoming changes.
+- Read the **newest entries** of the work log below — what others did and what
+  they planned in "Next". Do not restart work someone already claimed there.
 
-**Her görev bittikten sonra:**
-- **Önce doğrula, sonra push:** standart doğrulamayı çalıştır (`pytest -q` +
-  `scripts/smoke_e2e.py`; frontend `typecheck`/`lint`/`build`). **`main`'e yalnız
-  yeşilse push et — asla kırmızı push etme.**
-- Anlamlı bir iş birimi yaptıysan (özellik, düzeltme, senaryo, ya da başkalarının
-  bilmesi gereken bir doküman/protokol değişikliği) aşağıdaki `NEW ENTRIES`
-  işaretinin **hemen altına** kısa bir kayıt ekle. Önemsiz düzeltmeleri loglama;
-  bir sonraki kayda topla.
-- Commit et ve `main`'e push et. (Bu, "sadece istenince push et" kuralının **tek
-  istisnasıdır** — work log her görevden sonra push edilir.)
+**After finishing a task:**
+- **Verify first, then push:** run the standard verification (`pytest -q` +
+  `scripts/smoke_e2e.py`; frontend `typecheck`/`lint`/`build`). **Push to `main`
+  only if green — never push red.**
+- If you did a meaningful unit of work (a feature, fix, scenario, or a doc/protocol
+  change others need to know about), prepend a short entry **immediately below**
+  the `NEW ENTRIES` marker below. Do not log trivial edits; fold them into the
+  next entry.
+- Commit and push to `main`. (This is the **one exception** to "push only when
+  asked" — the work log is pushed after every task.)
 
-**Push reddedilirse (main ilerlemişse):**
-- `git pull --rebase`, sonra tekrar push.
-- **Work log çakışması önemsizdir:** her iki kaydı da tut (çakışma işaretlerini
-  sil, sırayı zaman damgasına göre bırak), `git add` + `git rebase --continue`.
-  Asla `--ours`/`--theirs`/`--abort` kullanma (peer'in kaydını düşürür).
-- **Kod çakışması önemsiz DEĞİLdir:** çöz, yeniden doğrula (yeşil), sonra push.
-- `main`'e asla `--force` / `--force-with-lease` push etme.
+**If the push is rejected (main moved):**
+- `git pull --rebase`, then push again.
+- **A work-log conflict is trivial:** keep both entries (delete the conflict
+  markers, leave order by timestamp), `git add` + `git rebase --continue`. Never
+  use `--ours`/`--theirs`/`--abort` (it drops a peer's entry).
+- **A code conflict is NOT trivial:** resolve it, re-verify (green), then push.
+- Never `--force` / `--force-with-lease` push to `main`.
 
-**Bakım:** kabaca son ~15-20 kaydı tut (eskiler git geçmişinde kalır). Kayıtlar
-kısa olsun; dosya listesi yazma (onu git tutar), **yapılan işi** yaz. Dil: mevcut
-günlükle tutarlı (Türkçe) ya da İngilizce.
+**Maintenance:** keep roughly the last ~15–20 entries (older ones live in git
+history). Keep entries short; do not list files (git tracks those), state the
+**work done**. Language: **English only** (all docs, code, and comments).
 
-**Kayıt formatı** (en yeni en üstte):
+**Entry format** (newest first):
 
 ```
-### <ISO-8601 UTC tarih, mümkünse saat — ör. 2026-07-05T14:30Z> — <kimlik>
-**Yaptım:** <bir-iki cümle, ne yapıldı>
-**Sırada:** <varsa planlanan sonraki iş; yoksa "—">
+### <ISO-8601 UTC date, with time if available — e.g. 2026-07-05T14:30Z> — <identity>
+**Did:** <one or two sentences, what was done>
+**Next:** <planned next task if any; otherwise "—">
 ```
 
-Kimlik: aracının adıyla başla, aracın veriyorsa session URL/ID ekle, yoksa araç
-adı + tarih. Örnekler:
+Identity: start with your tool name, add a session URL/ID if your tool exposes
+one, otherwise tool name + date. Examples:
 `Claude-Session: https://claude.ai/code/session_XXXX` ·
 `Antigravity: <workspace/agent> (2026-07-05)`
 
 <!-- NEW ENTRIES BELOW, NEWEST FIRST -->
 
 ### 2026-07-05 — Claude-Session: https://claude.ai/code/session_01VwqkEe5sMnLeEL29TDnbJs
-**Yaptım:** Çalışma günlüğü bölümünü ve çoklu-agent işbirliği protokolünü ekledim
-(göreve başlamadan pull + günlüğü oku; görev sonunda doğrula→yeşilse→logla→push).
-4-mercekli adversarial gözden geçirmeyle sertleştirdim: push-politikası istisnası,
-doğrulama kapısı, rebase/çakışma adımları, araç-nötr kimlik, tek kanonik kopya.
-Önceki işlerin özeti `resources/CHANGELOG.md`'de.
-**Sırada:** Bir provider anahtarıyla #7 (LLM tool-calling) veya AWS ile #10 (deploy).
+**Did:** Translated all planning docs to English (HANDOFF, CHANGELOG,
+PROJECT_STATUS_AND_ROADMAP, resources/README) and set an English-only rule for
+all docs/code/comments across the agent configs. Verified only these four files
+had non-English content (all code was already English).
+**Next:** With a provider key, #7 (LLM tool-calling); or with AWS access, #10 (deploy).
+
+### 2026-07-05 — Claude-Session: https://claude.ai/code/session_01VwqkEe5sMnLeEL29TDnbJs
+**Did:** Added the work log section and the multi-agent collaboration protocol
+(pull + read the log before a task; verify → if green → log → push after). Hardened
+it via a 4-lens adversarial review: push-policy exception, verification gate,
+rebase/conflict steps, tool-neutral identity, single canonical copy. Summary of
+prior work is in `resources/CHANGELOG.md`.
+**Next:** With a provider key, #7 (LLM tool-calling); or with AWS, #10 (deploy).

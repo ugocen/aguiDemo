@@ -1,17 +1,17 @@
 # resources/
 
-Devir (handoff) materyalleri — projeyi yeni bir (local) session'da kaldığı
-yerden sürdürmek için.
+Handoff materials — to continue the project from where it left off in a new
+(local) session.
 
-- **`HANDOFF.md`** — ana bootstrap dokümanı: amaç, karar günlüğü (neyi neden
-  yaptık), mevcut durum, mimari + uçtan uca akış, repo haritası, çalıştırma ve
-  doğrulama, bilinen tuzaklar, eksikler, adım adım implementasyon planı ve son
-  bölümde **çalışma günlüğü (work log) + çoklu-agent işbirliği protokolü**
-  (göreve başlamadan pull + günlüğü oku; görev sonunda doğrula→logla→push).
-- **`CHANGELOG.md`** — şimdiye kadar eklenen her şeyin temalara göre özeti
-  (çekirdek, kart tipleri, CopilotKit, senaryo ajanları, multi-vendor LLM, bulut,
-  agent tooling, kurallar, dokümantasyon).
+- **`HANDOFF.md`** — the main bootstrap document: purpose, decision log (what we
+  did and why), current status, architecture + end-to-end flow, repo map, run and
+  verify, known gotchas, gaps, the step-by-step implementation plan, and, in the
+  final section, the **work log + multi-agent collaboration protocol** (before a
+  task pull + read the log; after a task verify → log → push).
+- **`CHANGELOG.md`** — a themed summary of everything added so far (core, card
+  types, CopilotKit, scenario agents, multi-vendor LLM, cloud, agent tooling,
+  rules, documentation).
 
-Yeni session'a ilk mesaj olarak: **"`resources/HANDOFF.md`'yi oku, sonra
-`docs/PROJECT_STATUS_AND_ROADMAP.md` ve `TODO.md`'ye bak; kaldığımız yerden devam
-edelim."**
+A good first message for a new session: **"Read `resources/HANDOFF.md`, then look
+at `docs/PROJECT_STATUS_AND_ROADMAP.md` and `TODO.md`; let's continue from where we
+left off."**

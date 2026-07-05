@@ -1,145 +1,143 @@
-# AG-UI Demo — Durum ve Yol Haritası
+# AG-UI Demo — Status and Roadmap
 
-Bu doküman üç soruyu yanıtlar: **(1) şu ana kadar ne yaptık, (2) CopilotKit'te
-hangi kart/mesaj tipleri uygun ve bizde hangileri hazır, (3) bundan sonra neler
-yapabiliriz.**
+This document answers three questions: **(1) what we have built so far, (2) which
+CopilotKit card/message primitives apply and which we have ready, (3) what we can
+do next.**
 
 ---
 
-## 1. Şu ana kadar ne yaptık
+## 1. What we have built so far
 
 ### Backend (FastAPI + LangGraph + `ag-ui-protocol`)
-- **Tek kaynak translator** (`app/agui/translator.py`): tüm AG-UI event'leri tek
-  yerden yayınlanır. Run lifecycle eşleşmesi, text mesajı için tek `messageId`,
-  `TOOL_CALL_START/ARGS/END/RESULT` sırası, canvas için `STATE_SNAPSHOT/DELTA`
-  ve human-in-the-loop suspend/resume tek noktada zorlanır.
-- **Ajanlar**: `mock` (scriptli, kimlik bilgisi gerektirmez) ve `langgraph`
-  (Marketplace üzerinden gerçek model). İkisi de semantik event üretir; onay
-  kararı generator `asend` kanalından geri döner, böylece ajan framework'ten
-  bağımsız kalır.
-- **Marketplace client** (`app/llm/marketplace.py`): `stream` ve `chunked`
-  fallback modları, aktif mod loglanır.
-- **Kalıcılık**: PostgreSQL geçmişi, swap edilebilir repository arayüzü arkasında.
-- **Auth**: dev stub + Microsoft Entra bearer doğrulama.
-- **HITL resume**: run_id anahtarlı in-memory `asyncio.Event` (demo kapsamı,
-  Temporal bilinçli olarak kullanılmadı).
-- **Kanıt (M6)**: her run için event-log capture + ordering-lint ve testler.
+- **Single-source translator** (`app/agui/translator.py`): all AG-UI events are
+  emitted from one place. Run lifecycle pairing, one `messageId` per text message,
+  the `TOOL_CALL_START/ARGS/END/RESULT` sequence, `STATE_SNAPSHOT/DELTA` for the
+  canvas, and human-in-the-loop suspend/resume are enforced in one spot.
+- **Agents**: `mock` (scripted, no credentials needed) and `langgraph` (real model
+  via a provider). Both produce semantic events; the approval decision returns
+  through the generator `asend` channel, so the agent stays framework-neutral.
+- **Model path** (`app/llm/`): vendor-agnostic, selected by `LLM_PROVIDER`
+  (marketplace/openai/anthropic/gemini); `stream` and `chunked` fallback modes,
+  the active mode is logged.
+- **Persistence**: PostgreSQL history behind a swappable repository interface.
+- **Auth**: dev stub + Microsoft Entra bearer validation.
+- **HITL resume**: an in-memory `asyncio.Event` keyed by run_id (demo scope,
+  Temporal deliberately not used).
+- **Evidence (M6)**: per-run event-log capture + ordering lint and tests.
 
 ### Frontend (Next.js App Router, TS strict, Zustand, Tiptap)
-- Claude benzeri iki bölgeli workspace: solda **Agents + History**, sağda
-  **chat**, ajan doküman düzenleyince açılan **Tiptap canvas**.
-- **İki AG-UI client**, `NEXT_PUBLIC_CLIENT` ile seçilir:
-  - `custom` (varsayılan): `lib/agui.ts` içindeki kendi hafif AG-UI/SSE
-    istemcimiz, elle yazılmış kartlar ve **Event Inspector** (canlı event akışı).
-  - `copilotkit`: CopilotKit provider + `CopilotChat` + `useCopilotAction`
-    kartları, `/api/copilotkit` runtime route'u üzerinden AG-UI backend'e bağlı.
-- **Mesaj/kart tipleri (10)**: streaming metin, lookup tool kartı, **tablo**,
-  **chart**, **follow-up / sonraki adımlar**, önerilen sorular, **citations**,
-  **form**, onay (HITL), canvas. (Bunların 8'i `catalog`'da tool; text ve canvas
-  tool değil.)
+- A Claude-like two-region workspace: **Agents + History** on the left, **chat**
+  on the right, a **Tiptap canvas** that opens when the agent edits a document.
+- **Two AG-UI clients**, selected by `NEXT_PUBLIC_CLIENT`:
+  - `custom` (default): our own lightweight AG-UI/SSE client in `lib/agui.ts`,
+    hand-built cards, and the **Event Inspector** (a live event stream).
+  - `copilotkit`: CopilotKit provider + `CopilotChat` + `useCopilotAction` cards,
+    connected to the AG-UI backend through the `/api/copilotkit` runtime route.
+- **Message/card types (10)**: streaming text, lookup tool card, **table**,
+  **chart**, **follow-up / next steps**, suggested questions, **citations**,
+  **form**, approval (HITL), canvas. (8 of these are tools in the `catalog`; text
+  and canvas are not tools.)
 
-### Senaryo ajanları (`agents/` — ayrı klasör)
-Dört scriptli senaryo ajanı, her biri farklı bir kart kombinasyonu gösterir:
-`research-assistant`, `doc-writer`, `data-analyst`, `support-triage`. Sidebar'dan
-seçilir; frontend seçili ajan id'sini `forwardedProps` ile gönderir, backend
-`build_agent` ilgili ajana yönlendirir. Ayrıntı: `agents/README.md`.
+### Scenario agents (`agents/` — separate folder)
+Four scripted scenario agents, each showing a different card combination:
+`research-assistant`, `doc-writer`, `data-analyst`, `support-triage`. Selected
+from the sidebar; the frontend sends the selected agent id via `forwardedProps`,
+and the backend `build_agent` routes to the right agent. Details: `agents/README.md`.
 
-### Bulut varlıkları (hazır, deploy manuel)
-- `deploy/agentcore/`: aynı ajanı AgentCore runtime kontratı (`/ping`,
-  `/invocations`) arkasında paketler; hem CLI hem ECR-register yolu.
-- `deploy/eks/`: frontend + backend için minimal Helm chart, RDS ve Entra.
+### Cloud assets (prepared, deployed manually)
+- `deploy/agentcore/`: packages the same agent behind the AgentCore runtime
+  contract (`/ping`, `/invocations`); both the CLI and ECR-register paths.
+- `deploy/eks/`: a minimal Helm chart for frontend + backend, RDS and Entra.
 
-### Doğrulama
-- Backend testleri 4/4 geçer; dört senaryo ajanı da lint-temiz akış üretir.
-- Frontend `tsc` ve `next build` (hem custom hem CopilotKit) temiz geçer.
-- Uçtan uca SSE run'ı: streaming metin → tool → canvas → onay suspend →
+### Verification
+- Backend tests pass; all four scenario agents produce a lint-clean stream.
+- Frontend `tsc` and `next build` (both custom and CopilotKit) pass clean.
+- End-to-end SSE run: streaming text → tool → canvas → approval suspend →
   `/agui/resume` → `RUN_FINISHED`.
 
 ---
 
-## 2. CopilotKit'te hangi kartlar/mesaj tipleri uygun
+## 2. Which CopilotKit cards/message types apply
 
-CopilotKit'in "hazır kart listesi" yoktur; generative UI'ı sen tanımlarsın. Bizim
-kurduğumuz sürümde (1.62.2) mevcut yapı taşları ve bunların hangi mesaj tipine
-uyduğu:
+CopilotKit has no "built-in card list"; you define the generative UI yourself. In
+the version we set up (1.62.2), the available building blocks and which message
+type each fits:
 
-### Kartları/mesajları render eden primitive'ler
-| CopilotKit primitive | Ne işe yarar | Bizim hangi mesaj tipimize uyar |
+### Primitives that render cards/messages
+| CopilotKit primitive | What it does | Which of our message types it fits |
 | --- | --- | --- |
-| `useCopilotAction` + `render` | Ajanın çağırdığı bir tool'u kart olarak render eder | tablo, follow-up, önerilen sorular, lookup tool kartı |
-| `useCopilotAction` + `renderAndWaitForResponse` | Human-in-the-loop; kullanıcı yanıtını `respond()` ile döndürür | onay (approval) kartı |
-| `useCopilotAction` + `name: "*"` | Eşleşmeyen tüm tool çağrıları için genel (catch-all) render | bilinmeyen/gelecekteki kart tipleri |
-| `useCoAgent` + `useCoAgentStateRender` | Paylaşılan agent state'ini UI'a bağlar ve render eder | canvas / shared-state dokümanı |
-| `useCopilotChatSuggestions` | Sohbet için önerilen sorular üretir | suggested questions (native yol) |
-| `useCopilotReadable` | Uygulama state'ini ajana bağlam olarak verir | seçili doküman/agent'ı bağlam yapmak |
-| `CopilotChat` / `CopilotSidebar` / `CopilotPopup` | Hazır sohbet yüzeyleri | ana chat alanı |
-| `Markdown`, `ImageRenderer`, `Suggestion(s)` | Mesaj içi zengin render | metin, görsel, öneri çipleri |
-| `CopilotDevConsole` | Geliştirici konsolu | bizim Event Inspector'ın CopilotKit karşılığı |
+| `useCopilotAction` + `render` | Renders a tool the agent calls as a card | table, follow-up, suggested questions, lookup tool card |
+| `useCopilotAction` + `renderAndWaitForResponse` | Human-in-the-loop; returns the user's answer via `respond()` | approval card |
+| `useCopilotAction` + `name: "*"` | Catch-all render for any unmatched tool call | unknown/future card types |
+| `useCoAgent` + `useCoAgentStateRender` | Binds and renders shared agent state | canvas / shared-state document |
+| `useCopilotChatSuggestions` | Generates suggested questions for the chat | suggested questions (native path) |
+| `useCopilotReadable` | Exposes app state to the agent as context | making the selected doc/agent context |
+| `CopilotChat` / `CopilotSidebar` / `CopilotPopup` | Ready-made chat surfaces | the main chat area |
+| `Markdown`, `ImageRenderer`, `Suggestion(s)` | Rich in-message render | text, image, suggestion chips |
+| `CopilotDevConsole` | Developer console | the CopilotKit counterpart of our Event Inspector |
 
-### Bizde CopilotKit ile HAZIR olan kartlar
-`components/copilot/CopilotGenerativeUI.tsx` içinde `useCopilotAction` ile:
-- `lookupKnowledge` → tool kartı (`render`)
-- `renderTable` → tablo kartı (`render`)
-- `renderFollowUp` → follow-up listesi (`render`)
-- `renderSuggestedQuestions` → öneri çipleri (`render`)
-- `requestApproval` → onay kartı (`renderAndWaitForResponse`)
+### Cards we have READY in CopilotKit
+In `components/copilot/CopilotGenerativeUI.tsx` via `useCopilotAction`:
+- `lookupKnowledge` → tool card (`render`)
+- `renderTable` → table card (`render`)
+- `renderFollowUp` → follow-up list (`render`)
+- `renderSuggestedQuestions` → suggestion chips (`render`)
+- `requestApproval` → approval card (`renderAndWaitForResponse`)
 
-Bunların hepsi backend catalog'u ile birebir aynı isimlerde; ajan tool'u isimle
-çağırır, CopilotKit eşleşen render'ı sohbet içinde gösterir.
+All of these share exact names with the backend catalog; the agent calls a tool by
+name and CopilotKit shows the matching render inline in the chat.
 
-### CopilotKit modunda artık hazır olanlar
-- **Canvas**: shared-state doküman `useCoAgent` ile okunuyor ve
-  `CopilotCanvasPanel` ile canlı render ediliyor.
-- **Senaryo seçimi**: sidebar'daki seçili ajan id'si CopilotKit provider
-  `properties`'i ile `forwardedProps` olarak backend'e geçiyor.
-- **HITL onayı**: backend onay tool-call args'ına `runId` enjekte ediyor;
-  CopilotKit onay kartı hem `respond()` çağırıyor hem de `/agui/resume`'a köprü
-  kuruyor.
+### Also ready in CopilotKit mode
+- **Canvas**: the shared-state document is read via `useCoAgent` and rendered live
+  by `CopilotCanvasPanel`.
+- **Scenario selection**: the sidebar's selected agent id passes to the backend as
+  `forwardedProps` via the CopilotKit provider `properties`.
+- **HITL approval**: the backend injects `runId` into the approval tool-call args;
+  the CopilotKit approval card both calls `respond()` and bridges to `/agui/resume`.
 
-### Şu an bilinen sınır
-- CopilotKit doğrulaması **derleme/bundling** seviyesinde yapıldı (`tsc` +
-  `next build` geçiyor). HITL round-trip ve canvas'ın görsel davranışının tam
-  doğrulaması için **tarayıcı + çalışan backend** gerekir; bu ortamda tarayıcı
-  yok. `custom` client'ta HITL ve canvas zaten uçtan uca çalışıyor.
-
----
-
-## 3. Bundan sonra neler yapabiliriz
-
-### Yapıldı (kısa vade, artık tamamlandı)
-- ✅ **CopilotKit-native HITL köprüsü**: onay args'ına `runId` enjekte edildi;
-  CopilotKit onay kartı `respond()` + `/agui/resume` köprüsü çağırıyor. (Tam
-  round-trip tarayıcı doğrulaması bekliyor.)
-- ✅ **Canvas'ı `useCoAgent` ile bağla**: `CopilotCanvasPanel` shared-state'i
-  okuyor.
-- ✅ **CopilotKit modunda ajan seçimi**: seçili id provider `properties` ile
-  `forwardedProps` olarak geçiyor.
-- ✅ **Yeni kartlar**: chart, citations, form eklendi (iki client'ta da).
-
-### Kısa vade (kalan)
-1. **Native öneriler**: `useCopilotChatSuggestions` ile önerilen soruları
-   CopilotKit'in kendi mekanizmasına taşı (şu an `useCopilotAction` render ile).
-2. Ek generative UI kartları: **dosya/attachment**, **kod bloğu**, **harita** —
-   pattern için `card-type-builder` subagent'ını kullan.
-3. Senaryo ajanlarını **gerçek LLM** (Marketplace/`langgraph`) ile güçlendir;
-   scriptli akışları model tool-calling kararlarıyla değiştir (bkz. HANDOFF §9 #7).
-
-### Uzun vade (üretim ve bulut)
-4. **AgentCore deploy** (Phase 2) ve **EKS deploy** (Phase 3) — varlıklar hazır,
-   manuel adımlar `deploy/*/README.md`'de.
-5. **Entra sign-in**'i aç, geçmişi ve run'ları kullanıcıya scope'la.
-6. **Dayanıklı HITL**: in-memory resume yerine kalıcı workflow motoru.
-7. Gözlemlenebilirlik: event loglarını topla, lint'le, replay dashboard'u kur.
-
-> Kalan işlerin canlı listesi `TODO.md`'de; madde bazlı implementasyon planı
-> `resources/HANDOFF.md` §9'da.
+### Current known limit
+- CopilotKit verification was done at the **compile/bundling** level (`tsc` +
+  `next build` pass). Fully verifying the HITL round-trip and the canvas's visual
+  behavior needs **a browser + a running backend**; there is no browser in this
+  environment. In the `custom` client, HITL and canvas already work end to end.
 
 ---
 
-## Nasıl denenir
+## 3. What we can do next
+
+### Done (short term, now complete)
+- ✅ **CopilotKit-native HITL bridge**: `runId` injected into the approval args;
+  the CopilotKit approval card calls `respond()` + the `/agui/resume` bridge. (Full
+  round-trip awaits browser verification.)
+- ✅ **Bind the canvas via `useCoAgent`**: `CopilotCanvasPanel` reads shared state.
+- ✅ **Scenario selection in CopilotKit mode**: the selected id passes as
+  `forwardedProps` via provider `properties`.
+- ✅ **New cards**: chart, citations, form (in both clients).
+
+### Short term (remaining)
+1. **Native suggestions**: move suggested questions to CopilotKit's own mechanism
+   with `useCopilotChatSuggestions` (currently via a `useCopilotAction` render).
+2. More generative UI cards: **file/attachment**, **code block**, **map** — use the
+   `card-type-builder` subagent for the pattern.
+3. Power the scenario agents with a **real LLM** (Marketplace/`langgraph`); replace
+   the scripted flows with model tool-calling decisions (see HANDOFF §9 #7).
+
+### Long term (production and cloud)
+4. **AgentCore deploy** (Phase 2) and **EKS deploy** (Phase 3) — assets are ready,
+   manual steps in `deploy/*/README.md`.
+5. Enable **Entra sign-in** and scope history and runs to the user.
+6. **Durable HITL**: a persistent workflow engine instead of the in-memory resume.
+7. Observability: capture, lint, and replay event logs in a dashboard.
+
+> The live list of remaining work is in `TODO.md`; the per-item implementation
+> plan is in `resources/HANDOFF.md` §9.
+
+---
+
+## How to try it
 
 ```bash
-# custom client (varsayılan, HITL uçtan uca çalışır, Event Inspector var)
+# custom client (default, HITL works end to end, Event Inspector present)
 cp .env.example .env
 cd backend && uvicorn app.main:app --reload
 cd frontend && npm install --legacy-peer-deps && npm run dev   # http://localhost:3000
@@ -147,13 +145,13 @@ cd frontend && npm install --legacy-peer-deps && npm run dev   # http://localhos
 # CopilotKit client
 # .env: NEXT_PUBLIC_CLIENT=copilotkit
 
-# doğrulama (kod değişince)
-cd backend && python scripts/smoke_e2e.py   # uçtan uca SSE smoke, exit-code'lu
+# verification (after code changes)
+cd backend && python scripts/smoke_e2e.py   # end-to-end SSE smoke, exit-coded
 ```
 
-Local Claude Code session için `CLAUDE.md` + `.claude/` (subagent'lar ve
-`/verify`, `/smoke`, `/add-card`, `/new-scenario` komutları) hazır.
+For a local Claude Code session, `CLAUDE.md` + `.claude/` (subagents and the
+`/verify`, `/smoke`, `/add-card`, `/new-scenario` commands) are ready.
 
-Sidebar'dan bir senaryo ajanı seç (ör. Doc Writer) ve mesaj gönder; her ajan
-farklı kart kombinasyonu üretir. Kaynak eşleme tablosu ve mimari için kök
-`README.md`'ye ve `docs/FINDINGS.md`'ye bakın.
+Select a scenario agent in the sidebar (e.g. Doc Writer) and send a message; each
+agent produces a different card combination. For the message-type mapping table
+and the architecture, see the root `README.md` and `docs/FINDINGS.md`.
