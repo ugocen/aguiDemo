@@ -275,8 +275,9 @@ See `.env.example` for the full, commented list. Highlights:
 | Variable | Meaning |
 | --- | --- |
 | `AGENT_MODE` | `mock` (scripted) or `langgraph` (real model) |
+| `LLM_PROVIDER` | `marketplace`, `openai`, `anthropic` (Claude), or `gemini` — the vendor for `langgraph` mode |
 | `AUTH_MODE` | `dev` (stub identity) or `entra` (validate Entra bearer) |
-| `MARKETPLACE_*` | Gateway URL, key, model, `stream`/`chunked` mode |
+| `MARKETPLACE_*` / `OPENAI_*` / `ANTHROPIC_*` / `GEMINI_*` | Per-vendor URL, key, model |
 | `DATABASE_URL` | async Postgres connection string |
 | `NEXT_PUBLIC_BACKEND_URL` | where the frontend sends AG-UI runs |
 | `NEXT_PUBLIC_CLIENT` | `custom` or `copilotkit` |
@@ -302,10 +303,10 @@ Agent tooling is set up for multiple assistants:
   Antigravity, Claude Code, and others).
 - **Claude Code** — `CLAUDE.md` (imports `AGENTS.md`), `.claude/agents/` subagents,
   `.claude/commands/` (`/check`, `/verify`, `/smoke`, `/run`, `/build`,
-  `/add-card`, `/new-scenario`).
+  `/add-card`, `/new-scenario`, `/aws-bootstrap`).
 - **Google Antigravity** — `.agents/rules/` (always-on rules) and
-  `.agents/workflows/` (the same `/check`, `/verify`, `/smoke`, `/run`, `/build`,
-  `/add-card`, `/new-scenario` as slash workflows).
+  `.agents/workflows/` (the same slash workflows: `/check`, `/verify`, `/smoke`,
+  `/run`, `/build`, `/add-card`, `/new-scenario`, `/aws-bootstrap`).
 
 New machine? Run `bash scripts/check_env.sh` (or `/check`) first to verify Python,
 Node, npm, Docker, and project setup.

@@ -108,12 +108,19 @@ citations, form, approval (HITL), canvas.
 - **Claude Code:** `CLAUDE.md` (imports this file), `.claude/agents/` subagents
   (`card-type-builder`, `scenario-agent-builder`, `agui-verifier`),
   `.claude/commands/` (`/check`, `/verify`, `/smoke`, `/run`, `/build`,
-  `/add-card`, `/new-scenario`).
+  `/add-card`, `/new-scenario`, `/aws-bootstrap`).
 - **Antigravity:** this `AGENTS.md`, always-on rules in `.agents/rules/`, and
   slash workflows in `.agents/workflows/` (`/check`, `/verify`, `/smoke`, `/run`,
-  `/build`, `/add-card`, `/new-scenario`). Note: some Antigravity versions read
-  `.agent/workflows/` (singular). If a workflow is ignored, rename the folder to
-  match your version.
+  `/build`, `/add-card`, `/new-scenario`, `/aws-bootstrap`). Note: some
+  Antigravity versions read `.agent/workflows/` (singular). If a workflow is
+  ignored, rename the folder to match your version.
 
-`/check` verifies prerequisites (via `scripts/check_env.sh`); `/run` starts the
-dev servers; `/build` builds the deployable Docker images.
+`/check` verifies prerequisites; `/run` starts the dev servers; `/build` builds
+the Docker images; `/aws-bootstrap` sets up the scoped AWS deployer.
+
+## AWS
+
+Bootstrap AWS once with root to create a scoped IAM user, then always use that
+user (`--profile agui-deployer`), never root. Flow, policy, and script are in
+`deploy/aws/` (see `.agents/rules/40-aws.md`). Connecting to AWS is not
+restricted by the install-isolation rule.

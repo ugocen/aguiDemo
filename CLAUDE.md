@@ -14,7 +14,7 @@ so the two never drift.
   (run tests + smoke + frontend build and report pass/fail).
 - **Commands** (`.claude/commands/`): `/check` (prerequisites), `/verify`,
   `/smoke`, `/run` (dev servers), `/build` (Docker images), `/add-card`,
-  `/new-scenario`.
+  `/new-scenario`, `/aws-bootstrap` (scoped AWS deployer).
 - **Permissions**: `.claude/settings.json` allowlists common dev commands;
   `.claude/settings.local.json` is personal and gitignored.
 

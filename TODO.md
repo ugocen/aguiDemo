@@ -35,12 +35,17 @@ summarized in `docs/PROJECT_STATUS_AND_ROADMAP.md`.
 
 ## Later (needs credentials or is manual)
 
-- [ ] **Real LLM for scenario agents** — swap scripted flows for model decisions
-      via the Marketplace/LangGraph path (needs Marketplace credentials).
+- [~] **Real LLM for scenario agents** — the model path is now vendor-agnostic
+      (`LLM_PROVIDER`: marketplace / openai / anthropic / gemini), so `langgraph`
+      mode runs against Claude, OpenAI, or Gemini. Still to do: let the model
+      *decide* which card to render via tool-calling instead of keyword
+      heuristics, and power the scenario agents with it (needs a provider key).
 - [ ] **Entra sign-in end to end** — MSAL token in `frontend/lib/auth.ts`,
       `AUTH_MODE=entra`, per-user scoping (needs Entra app registration).
 - [ ] **AgentCore deploy** (Phase 2) and **EKS deploy** (Phase 3) — run the
-      prepared manual steps (needs AWS).
+      prepared manual steps (needs AWS). First run `/aws-bootstrap` once with root
+      to create the scoped `agui-deployer` IAM user, then deploy with that profile
+      (`deploy/aws/`).
 - [ ] **Durable HITL** — replace the in-memory resume registry with a
       workflow-backed store so suspended runs survive restarts.
 - [ ] **Replay dashboard** — pull, lint, and replay captured event logs in the UI.
