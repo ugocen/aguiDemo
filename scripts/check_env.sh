@@ -75,8 +75,16 @@ echo "Project setup:"
 # .env
 if [ -f "$REPO_ROOT/.env" ]; then pass ".env present"; else warning ".env missing (run: cp .env.example .env)"; fi
 
-# backend venv
-if [ -d "$REPO_ROOT/backend/.venv" ]; then pass "backend/.venv present"; else warning "backend/.venv missing (python -m venv backend/.venv && pip install -e 'backend[dev]')"; fi
+# backend venv (verify it is a usable venv, not just a directory)
+if [ -x "$REPO_ROOT/backend/.venv/bin/python" ]; then
+  if "$REPO_ROOT/backend/.venv/bin/python" -m pip --version >/dev/null 2>&1; then
+    pass "backend/.venv present (with pip)"
+  else
+    warning "backend/.venv has no pip (uv-created?); use 'python -m venv backend/.venv' or 'uv pip install -e backend[dev]'"
+  fi
+else
+  warning "backend/.venv missing (python -m venv backend/.venv && pip install -e 'backend[dev]')"
+fi
 
 # frontend deps
 if [ -d "$REPO_ROOT/frontend/node_modules" ]; then pass "frontend/node_modules present"; else warning "frontend deps missing (cd frontend && npm install --legacy-peer-deps)"; fi
