@@ -246,7 +246,10 @@ README.md, TODO.md, .env.example, docker-compose.yml
 Gereksinim: Python 3.11, Node 20+ (bu repo 22 ile de çalıştı), Docker (Postgres için).
 
 ```bash
-# 0. env
+# 0. ön koşulları kontrol et (Python 3.11+, Node 20+, npm, Docker, .env, venv)
+bash scripts/check_env.sh   # veya /check
+
+# 0b. env
 cp .env.example .env       # varsayılanlar: AGENT_MODE=mock, AUTH_MODE=dev, NEXT_PUBLIC_CLIENT=custom
 
 # 1. Postgres (opsiyonel; yoksa run'lar akar ama history olmaz)

@@ -95,12 +95,13 @@ citations, form, approval (HITL), canvas.
 
 - **Claude Code:** `CLAUDE.md` (imports this file), `.claude/agents/` subagents
   (`card-type-builder`, `scenario-agent-builder`, `agui-verifier`),
-  `.claude/commands/` (`/verify`, `/smoke`, `/run`, `/build`, `/add-card`,
-  `/new-scenario`).
+  `.claude/commands/` (`/check`, `/verify`, `/smoke`, `/run`, `/build`,
+  `/add-card`, `/new-scenario`).
 - **Antigravity:** this `AGENTS.md`, always-on rules in `.agents/rules/`, and
-  slash workflows in `.agents/workflows/` (`/verify`, `/smoke`, `/run`, `/build`,
-  `/add-card`, `/new-scenario`). Note: some Antigravity versions read
+  slash workflows in `.agents/workflows/` (`/check`, `/verify`, `/smoke`, `/run`,
+  `/build`, `/add-card`, `/new-scenario`). Note: some Antigravity versions read
   `.agent/workflows/` (singular). If a workflow is ignored, rename the folder to
   match your version.
 
-`/run` starts the dev servers; `/build` builds the deployable Docker images.
+`/check` verifies prerequisites (via `scripts/check_env.sh`); `/run` starts the
+dev servers; `/build` builds the deployable Docker images.

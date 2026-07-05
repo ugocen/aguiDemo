@@ -301,11 +301,14 @@ Agent tooling is set up for multiple assistants:
 - **`AGENTS.md`** (root) — the canonical, cross-tool agent guide (read by
   Antigravity, Claude Code, and others).
 - **Claude Code** — `CLAUDE.md` (imports `AGENTS.md`), `.claude/agents/` subagents,
-  `.claude/commands/` (`/verify`, `/smoke`, `/run`, `/build`, `/add-card`,
-  `/new-scenario`).
+  `.claude/commands/` (`/check`, `/verify`, `/smoke`, `/run`, `/build`,
+  `/add-card`, `/new-scenario`).
 - **Google Antigravity** — `.agents/rules/` (always-on rules) and
-  `.agents/workflows/` (the same `/verify`, `/smoke`, `/run`, `/build`,
+  `.agents/workflows/` (the same `/check`, `/verify`, `/smoke`, `/run`, `/build`,
   `/add-card`, `/new-scenario` as slash workflows).
+
+New machine? Run `bash scripts/check_env.sh` (or `/check`) first to verify Python,
+Node, npm, Docker, and project setup.
 
 ## Event logs and evidence
 
