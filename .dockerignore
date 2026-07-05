@@ -1,11 +1,51 @@
+# Root build context, used by the backend and AgentCore images (built from the
+# repo root so the agents/ package is included). Keeps: backend/app,
+# backend/pyproject.toml, agents/, deploy/agentcore/agentcore_app.py.
+
+# VCS and CI
 .git
-**/node_modules
-**/.next
-**/.venv
-**/__pycache__
-**/*.pyc
-backend/run_logs/*.jsonl
-backend/tests
+.gitignore
+.dockerignore
+.github
+
+# Frontend and docs (not part of the backend/agentcore images)
 frontend
 docs
+resources
+
+# Agent-tooling config
+.agents
+.claude
+.antigravity
+
+# Deploy assets not needed at runtime (keep deploy/agentcore)
+deploy/eks
+
+# Root markdown and local config
+*.md
+docker-compose.yml
 .env
+.env.*
+!.env.example
+
+# Python caches / envs / build
+**/__pycache__
+**/*.py[cod]
+**/.venv
+**/venv
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/*.egg-info
+**/build
+**/dist
+
+# Backend test suite and captured run logs
+backend/tests
+backend/run_logs
+
+# Node / Next (defensive; frontend is excluded wholesale above)
+**/node_modules
+**/.next
+**/.turbo
+**/*.tsbuildinfo

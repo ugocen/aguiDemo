@@ -301,10 +301,11 @@ Agent tooling is set up for multiple assistants:
 - **`AGENTS.md`** (root) — the canonical, cross-tool agent guide (read by
   Antigravity, Claude Code, and others).
 - **Claude Code** — `CLAUDE.md` (imports `AGENTS.md`), `.claude/agents/` subagents,
-  `.claude/commands/` (`/verify`, `/smoke`, `/run`, `/add-card`, `/new-scenario`).
+  `.claude/commands/` (`/verify`, `/smoke`, `/run`, `/build`, `/add-card`,
+  `/new-scenario`).
 - **Google Antigravity** — `.agents/rules/` (always-on rules) and
-  `.agents/workflows/` (the same `/verify`, `/smoke`, `/run`, `/add-card`,
-  `/new-scenario` as slash workflows).
+  `.agents/workflows/` (the same `/verify`, `/smoke`, `/run`, `/build`,
+  `/add-card`, `/new-scenario` as slash workflows).
 
 ## Event logs and evidence
 

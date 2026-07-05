@@ -2,23 +2,33 @@
 __pycache__/
 *.py[cod]
 *.egg-info/
+*.egg
+build/
+dist/
 .venv/
 venv/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.coverage
+htmlcov/
+coverage.xml
 
-# Node
+# Node / Next.js
 node_modules/
 .next/
 out/
+.turbo/
 *.tsbuildinfo
+.eslintcache
 npm-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
-# Env
+# Env (keep .env.example tracked)
 .env
-.env.local
+.env.*
+!.env.example
 *.local
 
 # Logs and run captures
@@ -28,10 +38,16 @@ backend/run_logs/*.jsonl
 
 # OS
 .DS_Store
+Thumbs.db
 
-# Editor
+# Editor / IDE
 .idea/
 .vscode/
+*.swp
 
 # Claude Code personal settings (project settings.json is committed)
 .claude/settings.local.json
+
+# Antigravity local state (workspace rules/workflows are committed)
+.agents/**/*.local.md
+.antigravity/

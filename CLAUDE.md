@@ -12,8 +12,8 @@ so the two never drift.
 - **Subagents** (`.claude/agents/`): `card-type-builder` (add a card/message type
   end to end), `scenario-agent-builder` (add a scenario agent), `agui-verifier`
   (run tests + smoke + frontend build and report pass/fail).
-- **Commands** (`.claude/commands/`): `/verify`, `/smoke`, `/run`, `/add-card`,
-  `/new-scenario`.
+- **Commands** (`.claude/commands/`): `/verify`, `/smoke`, `/run` (dev servers),
+  `/build` (Docker images), `/add-card`, `/new-scenario`.
 - **Permissions**: `.claude/settings.json` allowlists common dev commands;
   `.claude/settings.local.json` is personal and gitignored.
 

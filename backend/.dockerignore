@@ -1,6 +1,21 @@
+# Note: the canonical backend image builds from the REPO ROOT (see the root
+# .dockerignore) so the agents/ package is included. This file only applies if
+# you build with the backend/ directory as the context.
 .venv
+venv
 __pycache__
-*.pyc
-tests
-run_logs/*.jsonl
+*.py[cod]
 .pytest_cache
+.mypy_cache
+.ruff_cache
+*.egg-info
+build
+dist
+tests
+run_logs
+!run_logs/.gitkeep
+.env
+.env.*
+!.env.example
+Dockerfile
+.dockerignore

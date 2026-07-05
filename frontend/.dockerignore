@@ -1,3 +1,19 @@
+# Frontend build context (context = frontend/). The image installs deps and runs
+# next build, so keep the source; drop installed/build output, caches, and env.
 node_modules
 .next
-npm-debug.log
+.turbo
+out
+*.tsbuildinfo
+.eslintcache
+npm-debug.log*
+yarn-error.log*
+
+.env
+.env.*
+
+.git
+.gitignore
+Dockerfile
+.dockerignore
+README.md
