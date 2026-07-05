@@ -38,7 +38,11 @@ npm run typecheck && npm run lint && npm run build
 1. **One event source.** Only `backend/app/agui/translator.py` emits AG-UI
    protocol events. Agents yield semantic events (`app/agent/events.py`); the
    translator maps them and enforces ordering/pairing and HITL suspend/resume.
-2. **One model path.** Every model call goes through `app/llm/marketplace.py`.
+2. **One model path.** Every model call goes through `app/llm/` via
+   `build_llm(settings)`. The provider is vendor-agnostic and selected by
+   `LLM_PROVIDER` (marketplace, openai, anthropic/Claude, gemini); all expose the
+   same `stream_completion(messages)` interface, so agents never depend on a
+   vendor.
 3. **Shared tool contract.** `backend/app/agui/catalog.py` and
    `frontend/lib/catalog.ts` must declare the same tool names and schemas
    (`scripts/smoke_e2e.py` checks parity).

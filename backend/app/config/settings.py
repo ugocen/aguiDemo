@@ -21,12 +21,36 @@ class Settings(BaseSettings):
 
     agent_mode: Literal["mock", "langgraph"] = "mock"
 
+    # Vendor-agnostic model path. Pick the provider; all expose the same
+    # streaming interface so the agent is unchanged across vendors.
+    llm_provider: Literal["marketplace", "openai", "anthropic", "gemini"] = "marketplace"
+    llm_stream_mode: Literal["stream", "chunked"] = "stream"
+    llm_timeout_seconds: float = 60.0
+
+    # Marketplace gateway (OpenAI-compatible)
     marketplace_base_url: str = "https://marketplace.example.com/v1"
     marketplace_api_key: str = ""
     marketplace_model: str = ""
     marketplace_tenant: str = ""
     marketplace_stream_mode: Literal["stream", "chunked"] = "stream"
     marketplace_timeout_seconds: float = 60.0
+
+    # OpenAI (or any OpenAI-compatible vendor)
+    openai_base_url: str = "https://api.openai.com/v1"
+    openai_api_key: str = ""
+    openai_model: str = "gpt-4o-mini"
+
+    # Anthropic (Claude)
+    anthropic_base_url: str = "https://api.anthropic.com"
+    anthropic_api_key: str = ""
+    anthropic_model: str = "claude-sonnet-4-5"
+    anthropic_version: str = "2023-06-01"
+    anthropic_max_tokens: int = 1024
+
+    # Google Gemini
+    gemini_base_url: str = "https://generativelanguage.googleapis.com"
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.0-flash"
 
     database_url: str = "postgresql+asyncpg://agui:agui@localhost:5432/agui"
 

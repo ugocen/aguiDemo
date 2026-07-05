@@ -24,7 +24,7 @@ from app.agui.catalog import (
 )
 from app.agui.resume import ApprovalDecision
 from app.config.settings import Settings
-from app.llm.marketplace import MarketplaceClient
+from app.llm.factory import build_llm
 
 
 class AgentState(TypedDict, total=False):
@@ -97,8 +97,9 @@ class LangGraphAgent:
     """LangGraph agent for the local track.
 
     A small compiled graph plans the run and produces the tool and document
-    outputs, while the model node streams real tokens through the Marketplace
-    client. The run method exposes semantic agent events that the translator
+    outputs, while the model node streams real tokens through the selected LLM
+    provider (Marketplace, OpenAI, Anthropic, or Gemini). The run method exposes
+    semantic agent events that the translator
     maps to AG-UI protocol events, and it receives the approval decision back
     through the generator send channel.
     """
@@ -108,7 +109,7 @@ class LangGraphAgent:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
         self._graph = build_graph()
-        self._client = MarketplaceClient(settings)
+        self._client = build_llm(settings)
 
     async def run(self, input: RunAgentInput) -> AsyncIterator[AgentEvent]:
         user_text = latest_user_text(input)
