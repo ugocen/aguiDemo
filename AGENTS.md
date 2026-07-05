@@ -124,3 +124,17 @@ Bootstrap AWS once with root to create a scoped IAM user, then always use that
 user (`--profile agui-deployer`), never root. Flow, policy, and script are in
 `deploy/aws/` (see `.agents/rules/40-aws.md`). Connecting to AWS is not
 restricted by the install-isolation rule.
+
+## Collaboration protocol (multiple agents / tools)
+
+More than one agent may work this repo in parallel (Claude Code, Antigravity, …).
+Stay in sync:
+
+- **Before starting a task:** `git pull` on `main`, review what changed, and read
+  the newest entries in the work log at the end of `resources/HANDOFF.md` (section
+  11) to see what others just did and plan to do.
+- **After finishing a task:** prepend a short entry to that work log — your
+  session identity, what you did, and what you plan next (if anything) — then
+  commit and push to `main`. If the push is rejected, `git pull --rebase` and push
+  again; work-log conflicts are trivial, keep both entries.
+- Log the *work*, not the file list (git already tracks files).

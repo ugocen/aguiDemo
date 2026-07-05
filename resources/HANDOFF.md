@@ -451,3 +451,40 @@ git clone <repo> && cd aguiDemo
 git checkout main
 # sonra bölüm 6'daki setup + doğrulama adımları
 ```
+
+---
+
+## 11. Çalışma günlüğü (work log)
+
+Bu repoda aynı anda birden fazla agent çalışabilir (Claude Code, Antigravity…).
+Senkron kalmak için **her agent şu protokolü izler**:
+
+- **Her göreve başlamadan önce:** `git pull` (main), gelen değişiklikleri incele
+  ve **bu günlüğün en üstündeki son kayıtları oku** — başkaları ne yaptı ve ne
+  yapmayı planlıyor.
+- **Her görev bittikten sonra:** buraya, **en üste**, kısa bir kayıt ekle
+  (kimliğin + ne yaptığın + varsa sırada ne planladığın), sonra commit edip
+  `main`'e push et. Push reddedilirse `git pull --rebase` yapıp tekrar push et;
+  bu günlükteki çakışma önemsizdir — **iki kaydı da tut**.
+- Dosya listesi yazma (onu git tutuyor); **yapılan işi** yaz.
+
+**Kayıt formatı** (en yeni en üstte):
+
+```
+### <tarih> — <kimlik, ör. Claude-Session: https://claude.ai/code/session_XXXX>
+**Yaptım:** <bir-iki cümle, ne yapıldı>
+**Sırada:** <varsa planlanan sonraki iş; yoksa "—">
+```
+
+---
+
+### 2026-07-05 — Claude-Session: https://claude.ai/code/session_01VwqkEe5sMnLeEL29TDnbJs
+**Yaptım:** Bu çalışma günlüğü bölümünü ve çoklu-agent işbirliği protokolünü
+(göreve başlamadan önce pull + günlüğü oku; görev sonunda kayıt + push) ekledim;
+protokolü `AGENTS.md` ve `.agents/rules/50-collaboration.md`'ye kural olarak
+işledim. Öncesinde: vendor-agnostik LLM katmanı (Claude/OpenAI/Gemini/Marketplace),
+AWS güvenli-flow (root ile bir kez `agui-deployer` IAM), `/check` & `/build` &
+`/aws-bootstrap` komutları, izolasyon kuralı, ignore sertleştirmesi ve tüm
+dokümanların senkronu tamamlandı (ayrıntı `resources/CHANGELOG.md`).
+**Sırada:** Kullanıcının vereceği bir provider anahtarıyla #7 (LLM tool-calling —
+model kartı kendisi seçsin) veya AWS erişimiyle #10 (AgentCore/EKS deploy).
