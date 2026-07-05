@@ -87,9 +87,11 @@ citations, form, approval (HITL), canvas.
 - **Never install anything globally.** Always use an isolated environment: a
   Python virtualenv (`backend/.venv`) for Python packages, the project-local
   `frontend/node_modules` for npm packages, and Docker for services (Postgres).
-  No `sudo`, no global `pip install`, no `npm install -g`, no `pip install
-  --user`. If the venv or `node_modules` does not exist, create it first
-  (`python -m venv backend/.venv` / `npm install --legacy-peer-deps`).
+  Never install language packages globally: no `npm install -g`, no `pip install
+  --user`, no `sudo pip`/`sudo npm`. If the venv or `node_modules` does not exist,
+  create it first (`python -m venv backend/.venv` / `npm install
+  --legacy-peer-deps`). This is about package installs only — connecting to
+  external services (AWS, the Marketplace gateway, GitHub) is unaffected.
 - Keep comments minimal; no comment on the same line as code; English only in code.
 - Read config from env via the single `Settings` object; never hardcode.
 - After any change, verify: `pytest -q` + `scripts/smoke_e2e.py` (backend) and

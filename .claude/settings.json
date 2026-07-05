@@ -19,18 +19,18 @@
       "Bash(curl -s localhost:*)"
     ],
     "deny": [
-      "Bash(sudo:*)",
       "Bash(npm install -g:*)",
       "Bash(npm i -g:*)",
       "Bash(npm install --global:*)",
       "Bash(pnpm add -g:*)",
-      "Bash(yarn global:*)",
+      "Bash(pnpm install -g:*)",
+      "Bash(yarn global add:*)",
       "Bash(pip install --user:*)",
       "Bash(pip3 install --user:*)",
-      "Bash(pipx install:*)",
-      "Bash(brew install:*)",
-      "Bash(apt-get install:*)",
-      "Bash(apt install:*)"
+      "Bash(sudo pip:*)",
+      "Bash(sudo pip3:*)",
+      "Bash(sudo npm:*)",
+      "Bash(sudo pnpm:*)"
     ]
   }
 }

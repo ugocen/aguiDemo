@@ -12,6 +12,10 @@ Always use an isolated environment:
 - **Services** (Postgres, etc.) → Docker (`docker compose up -d postgres`), never
   a host install.
 
-No `sudo`. If an isolated environment does not exist yet, create it first, then
-install into it. Run `bash scripts/check_env.sh` (or `/check`) to see what is
-present.
+Do not use `sudo` to install packages. If an isolated environment does not exist
+yet, create it first, then install into it. Run `bash scripts/check_env.sh` (or
+`/check`) to see what is present.
+
+This rule is about **package installs only**. It does not restrict connecting to
+external services — AWS, the GenAI Marketplace gateway, GitHub, or a database are
+all fine.
