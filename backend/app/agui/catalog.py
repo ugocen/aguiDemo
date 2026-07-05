@@ -5,6 +5,7 @@ SUGGESTED_QUESTIONS_TOOL = "renderSuggestedQuestions"
 APPROVAL_TOOL = "requestApproval"
 TABLE_TOOL = "renderTable"
 FOLLOWUP_TOOL = "renderFollowUp"
+CHART_TOOL = "renderChart"
 
 
 def tool_catalog() -> list[dict[str, Any]]:
@@ -96,6 +97,30 @@ def tool_catalog() -> list[dict[str, Any]]:
                     },
                 },
                 "required": ["items"],
+            },
+        },
+        {
+            "name": CHART_TOOL,
+            "description": "Render a simple bar chart from labeled numeric series.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string", "description": "Chart caption."},
+                    "unit": {"type": "string", "description": "Optional value unit, e.g. %."},
+                    "series": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "label": {"type": "string"},
+                                "value": {"type": "number"},
+                            },
+                            "required": ["label", "value"],
+                        },
+                        "description": "Bars to plot.",
+                    },
+                },
+                "required": ["series"],
             },
         },
     ]

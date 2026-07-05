@@ -4,6 +4,7 @@ import { useCopilotAction } from "@copilotkit/react-core";
 
 import {
   APPROVAL_TOOL,
+  CHART_TOOL,
   FOLLOWUP_TOOL,
   LOOKUP_TOOL,
   SUGGESTED_QUESTIONS_TOOL,
@@ -28,6 +29,12 @@ interface LookupArgs {
 interface ApprovalArgs {
   action?: string;
   detail?: string;
+}
+
+interface ChartArgs {
+  title?: string;
+  unit?: string;
+  series?: Array<{ label?: string; value?: number }>;
 }
 
 /**
@@ -128,6 +135,37 @@ export function CopilotGenerativeUI() {
               </span>
             ))}
           </div>
+        </div>
+      );
+    },
+  });
+
+  useCopilotAction({
+    name: CHART_TOOL,
+    available: "disabled",
+    render: (props: { args: ChartArgs }) => {
+      const { title, unit = "", series = [] } = props.args ?? {};
+      const values = series.map((point) => Number(point.value ?? 0));
+      const max = Math.max(1, ...values);
+      return (
+        <div className="card">
+          <span className="tool-badge">chart, {CHART_TOOL}</span>
+          {title && <div style={{ fontWeight: 600, marginBottom: 8 }}>{title}</div>}
+          {series.map((point, index) => (
+            <div key={index} className="copilot-bar-row">
+              <span className="copilot-bar-label">{point.label}</span>
+              <span className="copilot-bar-track">
+                <span
+                  className="copilot-bar-fill"
+                  style={{ width: `${Math.round((Number(point.value ?? 0) / max) * 100)}%` }}
+                />
+              </span>
+              <span className="copilot-bar-value">
+                {point.value}
+                {unit}
+              </span>
+            </div>
+          ))}
         </div>
       );
     },

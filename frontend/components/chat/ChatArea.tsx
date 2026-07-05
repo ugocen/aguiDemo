@@ -7,6 +7,7 @@ import { createConversation, fetchConversations } from "@/lib/api";
 import { toolCatalog } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
 import { ApprovalCard } from "@/components/catalog/ApprovalCard";
+import { ChartCard } from "@/components/catalog/ChartCard";
 import { FollowUpCard } from "@/components/catalog/FollowUpCard";
 import { SuggestedQuestions } from "@/components/catalog/SuggestedQuestions";
 import { TableCard } from "@/components/catalog/TableCard";
@@ -109,6 +110,9 @@ export function ChatArea() {
           }
           if (item.kind === "followup") {
             return <FollowUpCard key={item.id} item={item} />;
+          }
+          if (item.kind === "chart") {
+            return <ChartCard key={item.id} item={item} />;
           }
           return (
             <div key={item.id} className="message-row">

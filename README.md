@@ -226,6 +226,7 @@ The agent sends different message types over AG-UI and each maps to a component:
 | Streaming text | `TEXT_MESSAGE_*` | chat bubble | `CopilotChat` |
 | Backend lookup | `lookupKnowledge` call + result | `ToolCard` | `useCopilotAction` render |
 | Table | `renderTable` call | `TableCard` | `useCopilotAction` render |
+| Chart | `renderChart` call | `ChartCard` (SVG bars) | `useCopilotAction` render |
 | Follow-up / next steps | `renderFollowUp` call | `FollowUpCard` | `useCopilotAction` render |
 | Suggested questions | `renderSuggestedQuestions` call | chips | `useCopilotAction` render |
 | Approval (HITL) | `requestApproval` + `/agui/resume` | `ApprovalCard` | `renderAndWaitForResponse` |

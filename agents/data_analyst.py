@@ -4,7 +4,7 @@ from ag_ui.core import RunAgentInput
 
 from app.agent.base import latest_user_text
 from app.agent.events import AgentEvent, TextDelta, ToolCallStarted
-from app.agui.catalog import FOLLOWUP_TOOL, SUGGESTED_QUESTIONS_TOOL, TABLE_TOOL
+from app.agui.catalog import CHART_TOOL, FOLLOWUP_TOOL, SUGGESTED_QUESTIONS_TOOL, TABLE_TOOL
 
 from agents._common import call_id, tokens
 
@@ -38,6 +38,21 @@ class DataAnalystAgent:
                     ["Tool", "8", "21%"],
                     ["State", "5", "13%"],
                     ["Lifecycle", "3", "8%"],
+                ],
+            },
+        )
+
+        yield ToolCallStarted(
+            tool_call_id=call_id(),
+            name=CHART_TOOL,
+            args={
+                "title": "Events by category",
+                "unit": "",
+                "series": [
+                    {"label": "Text", "value": 22},
+                    {"label": "Tool", "value": 8},
+                    {"label": "State", "value": 5},
+                    {"label": "Lifecycle", "value": 3},
                 ],
             },
         )

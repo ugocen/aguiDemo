@@ -19,7 +19,7 @@ summarized in `docs/PROJECT_STATUS_AND_ROADMAP.md`.
 
 ## Next (code, verifiable locally)
 
-- [ ] **Chart/metrics card type** — `renderChart` in both catalogs, inline SVG
+- [x] **Chart/metrics card type** — `renderChart` in both catalogs, inline SVG
       bar chart (custom) + `useCopilotAction` render (CopilotKit), used by the
       data-analyst scenario.
 - [ ] **CopilotKit-native HITL** — make `renderAndWaitForResponse` approval work

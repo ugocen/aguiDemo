@@ -3,6 +3,7 @@ export const SUGGESTED_QUESTIONS_TOOL = "renderSuggestedQuestions";
 export const APPROVAL_TOOL = "requestApproval";
 export const TABLE_TOOL = "renderTable";
 export const FOLLOWUP_TOOL = "renderFollowUp";
+export const CHART_TOOL = "renderChart";
 
 export interface ToolSchema {
   name: string;
@@ -85,6 +86,27 @@ export function toolCatalog(): ToolSchema[] {
           },
         },
         required: ["items"],
+      },
+    },
+    {
+      name: CHART_TOOL,
+      description: "Render a simple bar chart from labeled numeric series.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Chart caption." },
+          unit: { type: "string", description: "Optional value unit, e.g. %." },
+          series: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: { label: { type: "string" }, value: { type: "number" } },
+              required: ["label", "value"],
+            },
+            description: "Bars to plot.",
+          },
+        },
+        required: ["series"],
       },
     },
   ];

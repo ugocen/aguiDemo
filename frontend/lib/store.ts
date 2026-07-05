@@ -4,6 +4,7 @@ import { AgentDescriptor, ConversationSummary, StoredMessage } from "./api";
 import { AguiEvent, JsonPatchOp, newId } from "./agui";
 import {
   APPROVAL_TOOL,
+  CHART_TOOL,
   FOLLOWUP_TOOL,
   LOOKUP_TOOL,
   SUGGESTED_QUESTIONS_TOOL,
@@ -65,6 +66,19 @@ export interface FollowUpItem {
   entries: FollowUpEntry[];
 }
 
+export interface ChartPoint {
+  label: string;
+  value: number;
+}
+
+export interface ChartItem {
+  kind: "chart";
+  id: string;
+  title: string;
+  unit: string;
+  points: ChartPoint[];
+}
+
 export interface ErrorItem {
   kind: "error";
   id: string;
@@ -78,6 +92,7 @@ export type ChatItem =
   | ApprovalItem
   | TableItem
   | FollowUpItem
+  | ChartItem
   | ErrorItem;
 
 export type EventCategory = "lifecycle" | "text" | "tool" | "state" | "other";
@@ -345,6 +360,12 @@ export const useStore = create<StoreState>((set, get) => ({
               items: [...s.items, { kind: "followup", id, title: "", entries: [] }],
             };
           }
+          if (name === CHART_TOOL) {
+            return {
+              toolNames,
+              items: [...s.items, { kind: "chart", id, title: "", unit: "", points: [] }],
+            };
+          }
           return { toolNames };
         });
         break;
@@ -407,6 +428,20 @@ export const useStore = create<StoreState>((set, get) => ({
             items: s.items.map((item) =>
               item.kind === "followup" && item.id === id
                 ? { ...item, title: String(args.title ?? ""), entries }
+                : item,
+            ),
+          }));
+        } else if (name === CHART_TOOL) {
+          const points = Array.isArray(args.series)
+            ? (args.series as Array<Record<string, unknown>>).map((point) => ({
+                label: String(point.label ?? ""),
+                value: Number(point.value ?? 0),
+              }))
+            : [];
+          set((s) => ({
+            items: s.items.map((item) =>
+              item.kind === "chart" && item.id === id
+                ? { ...item, title: String(args.title ?? ""), unit: String(args.unit ?? ""), points }
                 : item,
             ),
           }));
