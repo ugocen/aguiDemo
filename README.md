@@ -1,51 +1,152 @@
 # AG-UI Demo
 
-A small assistant workspace that exercises the [AG-UI protocol](https://docs.ag-ui.com):
-the backend streams typed JSON events (lifecycle, text, tool calls, state,
-custom) to the frontend over Server-Sent Events, and the frontend renders them.
+A small, Claude-like AI assistant workspace built to exercise the **AG-UI
+protocol** end to end. AG-UI (Agent-User Interaction Protocol) is an open,
+event-based protocol: the backend streams typed JSON events (lifecycle, text,
+tool calls, state, custom) to the frontend over Server-Sent Events, and the
+frontend renders each one. This repository is a full, runnable reference: a
+FastAPI + LangGraph backend, a Next.js frontend with **two interchangeable
+AG-UI clients**, scenario agents, and prepared cloud-deploy assets.
 
-Four capabilities are demonstrated live in one signed-in session:
+---
 
-- **Streaming chat**, tokens appear as the model produces them.
-- **A visible tool call**, rendered as a live card.
-- **A shared-state document canvas**, the agent edits it live while it talks.
-- **A human-in-the-loop approval**, the agent pauses and resumes on your answer.
+## Table of contents
 
-Phase 1 runs entirely on a local machine. AgentCore and EKS assets are prepared
-for later, manual deploys (see `deploy/`).
+1. [What it does](#what-it-does)
+2. [What tasks it performs](#what-tasks-it-performs)
+3. [Architecture](#architecture)
+4. [Repository layout](#repository-layout)
+5. [Prerequisites](#prerequisites)
+6. [Setup and install](#setup-and-install)
+7. [Running it](#running-it)
+8. [Demo walkthrough](#demo-walkthrough)
+9. [The two AG-UI clients](#the-two-ag-ui-clients)
+10. [Message types and generative UI](#message-types-and-generative-ui)
+11. [Scenario agents](#scenario-agents)
+12. [HTTP API](#http-api)
+13. [Configuration reference](#configuration-reference)
+14. [Testing and verification](#testing-and-verification)
+15. [Event logs and evidence](#event-logs-and-evidence)
+16. [Cloud deployment](#cloud-deployment)
+17. [Troubleshooting](#troubleshooting)
+18. [Roadmap and status](#roadmap-and-status)
+
+---
+
+## What it does
+
+The demo is a two-region workspace, like a modern assistant:
+
+- **Left sidebar** — a list of selectable **agents** (top) and the signed-in
+  user's **conversation history** (below).
+- **Right** — the **chat area**, with streamed assistant messages, tool cards,
+  a **document canvas** that opens beside the chat when the agent edits a
+  document, and **approval cards** when the agent needs a decision.
+
+It demonstrates, live, the four AG-UI capabilities plus more card types:
+
+- **Streaming chat** — tokens appear as the model produces them.
+- **A visible tool call** — rendered as a live card.
+- **A shared-state document canvas** — the agent edits it live while it talks.
+- **A human-in-the-loop approval** — the agent pauses and resumes on your answer.
+- **Extra message types** — tables, follow-up lists, and suggested questions.
+
+Everything runs locally with no external credentials by default (a scripted
+`mock` agent drives all capabilities). Point it at a real model and cloud when
+you are ready.
+
+## What tasks it performs
+
+- Accepts a user message, runs an agent, and **streams typed AG-UI events** back
+  over SSE.
+- **Looks facts up** with a backend tool and renders the result as a card.
+- **Drafts and edits a shared document** on a Tiptap canvas via JSON Patch state
+  deltas, live, while chat is still streaming.
+- **Renders structured outputs** — tables, follow-up/next-step lists, and
+  suggested-question chips.
+- **Pauses for human approval** and resumes the same run on the decision.
+- **Persists conversations** to PostgreSQL and reloads history per user.
+- **Captures every run's event stream** to a JSONL log that can be pulled,
+  ordering-linted, and replayed.
+- Routes between **scenario-specific agents** (research, writing, analytics,
+  support), each showcasing a different mix of the above.
 
 ## Architecture
 
 ```
-frontend (Next.js, React, TS)  --AG-UI over SSE-->  backend (FastAPI)
-  lib/agui.ts   single client                         api/agui_router.py  SSE + resume
-  lib/store.ts  event reducer                         agui/translator.py  single event source
-  Tiptap canvas, catalog cards                        agent/graph.py      LangGraph agent
-                                                       agent/mock.py       scripted agent
-                                                       llm/marketplace.py  gateway client
-                                                       db/*                Postgres history
+frontend (Next.js, React, TS)                backend (FastAPI)
+  lib/agui.ts     custom AG-UI/SSE client       api/agui_router.py   POST /agui/run (SSE), /agui/resume
+  lib/store.ts    event reducer -> UI            agui/translator.py   the ONLY place AG-UI events are emitted
+  components/                                    agui/catalog.py      frontend-tool schemas (shared contract)
+    chat, catalog, canvas, inspector            agent/factory.py     picks mock | langgraph | scenario
+  components/copilot/                            agent/graph.py       LangGraph agent (streams via Marketplace)
+    CopilotChat + useCopilotAction cards         agent/mock.py        scripted showcase agent
+  app/api/copilotkit/route.ts                    agents/ (top level)  scenario agents
+    CopilotKit runtime -> HttpAgent -> backend   llm/marketplace.py   streaming gateway client
+                                                 db/*                 PostgreSQL history, swappable repo
+                                                 auth/entra.py        dev stub | Entra bearer validation
 ```
 
-- Every model call routes through `backend/app/llm/marketplace.py`.
-- Every AG-UI event is emitted from one module, `backend/app/agui/translator.py`.
-- Config is env-driven through one `Settings` object; nothing is hardcoded.
-- Identity comes from the bearer, never from `RunAgentInput`.
+Key invariants:
+
+- **One event source.** Only `app/agui/translator.py` emits AG-UI protocol
+  events. Agents yield framework-neutral *semantic* events; the translator maps
+  them and enforces ordering, pairing, and the human-in-the-loop suspend/resume.
+- **One model path.** Every model call goes through `app/llm/marketplace.py`.
+- **Shared tool contract.** The frontend declares the tools it can render in
+  `RunAgentInput.tools` (`frontend/lib/catalog.ts`); the backend advertises the
+  same schemas (`backend/app/agui/catalog.py`); the agent calls them by name.
+- **Identity from the bearer**, never from `RunAgentInput`.
+
+## Repository layout
+
+```
+aguiDemo/
+  README.md                     this file
+  .env.example                  every config value, documented
+  docker-compose.yml            local Postgres
+  TODO.md                       remaining work
+  backend/                      FastAPI + LangGraph backend
+    app/
+      main.py                   app, CORS, routers, lifespan
+      config/settings.py        pydantic-settings, env-driven
+      api/                      agui_router, conversations, agents
+      agui/                     translator, catalog, resume, lint, run_capture
+      agent/                    graph (LangGraph), mock, tools, factory, events
+      llm/marketplace.py        streaming gateway client
+      db/                       models, session, repository
+      auth/entra.py             bearer validation dependency
+      logging/setup.py          structlog config
+    tests/test_event_order.py   ordering-lint tests
+  frontend/                     Next.js App Router frontend
+    app/                        layout, page, providers, api/copilotkit route
+    components/                 sidebar, chat, catalog, canvas, inspector, copilot
+    lib/                        agui, store, api, catalog, auth
+  agents/                       scenario agents (separate package)
+  deploy/agentcore/             Phase 2, AgentCore packaging + Dockerfile
+  deploy/eks/                   Phase 3, Helm chart
+  docs/                         FINDINGS, PROJECT_STATUS_AND_ROADMAP, sample log
+```
 
 ## Prerequisites
 
-- Python 3.11, Node 20+, Docker (for local Postgres).
+- **Python 3.11**
+- **Node 20+** and npm
+- **Docker** (for the local Postgres container)
 
-## Setup
+## Setup and install
+
+### 1. Environment
 
 ```bash
 cp .env.example .env
 ```
 
-The defaults run with `AGENT_MODE=mock` and `AUTH_MODE=dev`, so the whole demo
-works without gateway credentials or sign-in. Set `MARKETPLACE_*` and switch
-`AGENT_MODE=langgraph` to stream from a real model.
+The defaults (`AGENT_MODE=mock`, `AUTH_MODE=dev`, `NEXT_PUBLIC_CLIENT=custom`)
+run the whole demo with no external credentials. Fill in `MARKETPLACE_*` and set
+`AGENT_MODE=langgraph` only when you want a real model.
 
-### 1. Local Postgres
+### 2. Local Postgres
 
 ```bash
 docker compose up -d postgres
@@ -54,147 +155,175 @@ docker compose up -d postgres
 History persistence degrades gracefully if Postgres is absent (runs still
 stream), but the sidebar history needs it.
 
-### 2. Backend
+### 3. Backend
 
 ```bash
 cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
-uvicorn app.main:app --reload --port 8000
 ```
 
-Health check: `curl localhost:8000/health`.
-
-Run the event-order tests:
-
-```bash
-cd backend && source .venv/bin/activate && pytest -q
-```
-
-### 3. Frontend
+### 4. Frontend
 
 ```bash
 cd frontend
 npm install
-npm run dev
 ```
 
-Open http://localhost:3000. Try:
+> If npm reports a peer-dependency conflict from the CopilotKit packages, use
+> `npm install --legacy-peer-deps`.
 
-> explain ag-ui and draft a note then approve
+## Running it
 
-You will see streaming text, a `lookupKnowledge` tool card, the canvas panel
-opening and filling live, and an approval card. Approve or reject to resume.
+Two terminals:
+
+```bash
+# terminal 1, backend
+cd backend && source .venv/bin/activate
+uvicorn app.main:app --reload --port 8000
+# health check:
+curl localhost:8000/health
+
+# terminal 2, frontend
+cd frontend
+npm run dev            # http://localhost:3000
+```
+
+## Demo walkthrough
+
+Open http://localhost:3000 and try:
+
+> explain ag-ui, compare the types, next steps, draft a note then approve
+
+You will see, in one run: streaming text, a `lookupKnowledge` tool card, a
+**table**, a **follow-up** list, **suggested-question** chips, the **canvas**
+opening and filling live, and an **approval** card. Approve or reject to resume
+the run.
+
+Pick a different **agent** in the sidebar (Research Assistant, Doc Writer, Data
+Analyst, Support Triage) to see different card combinations. Click **Show
+events** (top bar, custom client) to watch the raw AG-UI stream live.
+
+## The two AG-UI clients
+
+`NEXT_PUBLIC_CLIENT` selects the frontend client without touching the backend:
+
+| Mode | What it uses | Notes |
+| --- | --- | --- |
+| `custom` (default) | Hand-built AG-UI/SSE client in `lib/agui.ts`, Zustand store, hand-built cards, and a live **Event Inspector** | Human-in-the-loop works end to end via `/agui/resume` |
+| `copilotkit` | CopilotKit provider + `CopilotChat`, cards via `useCopilotAction`, `/api/copilotkit` runtime route bridging to the backend with an AG-UI `HttpAgent` | Cards and streaming work; end-to-end approval needs the CopilotKit-native HITL step (see roadmap) |
+
+All AG-UI wiring is isolated (custom: `lib/agui.ts`; CopilotKit:
+`components/copilot/` + `app/api/copilotkit/route.ts`), so the endpoint target
+can later point at AgentCore's native AG-UI endpoint with a one-file change.
 
 ## Message types and generative UI
 
-The agent sends different message types over AG-UI and the frontend renders a
-matching component for each. The contract is shared on both sides:
+The agent sends different message types over AG-UI and each maps to a component:
 
-- The frontend declares the tools it can render in `RunAgentInput.tools`
-  (`frontend/lib/catalog.ts`), the backend advertises the same schemas
-  (`backend/app/agui/catalog.py`), and the agent calls them by name.
-- The store reducer (`frontend/lib/store.ts`) maps each event/tool name to a
-  card, the same idea as CopilotKit's `useCopilotAction` render handlers, kept
-  here in one place so the flow is explicit.
+| Message type | AG-UI representation | Custom client | CopilotKit client |
+| --- | --- | --- | --- |
+| Streaming text | `TEXT_MESSAGE_*` | chat bubble | `CopilotChat` |
+| Backend lookup | `lookupKnowledge` call + result | `ToolCard` | `useCopilotAction` render |
+| Table | `renderTable` call | `TableCard` | `useCopilotAction` render |
+| Follow-up / next steps | `renderFollowUp` call | `FollowUpCard` | `useCopilotAction` render |
+| Suggested questions | `renderSuggestedQuestions` call | chips | `useCopilotAction` render |
+| Approval (HITL) | `requestApproval` + `/agui/resume` | `ApprovalCard` | `renderAndWaitForResponse` |
+| Canvas edits | `STATE_SNAPSHOT` / `STATE_DELTA` | Tiptap canvas | (roadmap: `useCoAgent`) |
 
-| Message type | Emitted as | Rendered by |
+Adding a new card type: declare a tool in both catalogs, handle its name in the
+store reducer (custom) and add a `useCopilotAction` render (CopilotKit), then
+add a component.
+
+## Scenario agents
+
+`agents/` is a separate package of scenario-specific agents. Each is a scripted
+agent (no credentials needed) showcasing a distinct mix of card types:
+
+| Agent id | Focus | Card types |
 | --- | --- | --- |
-| Streaming text | `TEXT_MESSAGE_*` | chat bubble |
-| Backend lookup | `lookupKnowledge` tool call + result | `ToolCard` |
-| Table | `renderTable` tool call | `TableCard` |
-| Follow-up / next steps | `renderFollowUp` tool call | `FollowUpCard` |
-| Suggested questions | `renderSuggestedQuestions` tool call | chips |
-| Approval (human-in-the-loop) | `requestApproval` + `/agui/resume` | `ApprovalCard` |
-| Canvas edits | `STATE_SNAPSHOT` / `STATE_DELTA` | Tiptap canvas |
+| `research-assistant` | Look a topic up, compare sources | text, lookup, table, suggestions |
+| `doc-writer` | Draft on the canvas, ask to finalize | text, canvas, follow-up, approval |
+| `data-analyst` | Metrics table and insights | text, table, follow-up, suggestions |
+| `support-triage` | Find an answer, escalate on approval | text, lookup, approval, follow-up |
 
-To see how the agent sends each type and how the frontend processes it, click
-**Show events** in the top bar. The event inspector logs every AG-UI event live,
-grouped by category (lifecycle, text, tool, state), so the raw stream behind the
-rendered cards is visible. Adding a new card type is: declare a tool in both
-catalogs, handle its name in the store reducer, and add a component.
+They appear in the sidebar; the frontend sends the selected id in
+`RunAgentInput.forwardedProps`, and `app/agent/factory.py` routes to the agent.
+Because they reuse the translator, they are AgentCore-deployable unchanged. See
+`agents/README.md`.
 
-### Two AG-UI clients
+## HTTP API
 
-`NEXT_PUBLIC_CLIENT` selects the frontend client:
+- `POST /agui/run` — body is `RunAgentInput`; response is the AG-UI event stream
+  (`text/event-stream`, `Cache-Control: no-cache`, `X-Accel-Buffering: no`,
+  keepalive every 15s). Persists the user turn and assistant result.
+- `POST /agui/resume` — resolves a suspended run with the approval decision.
+- `GET /agui/runs/{run_id}/log` — pulls the captured event log for a run.
+- `GET /conversations`, `GET /conversations/{id}`, `POST /conversations`.
+- `GET /agents` — the selectable agent list for the sidebar.
+- `GET /health` — liveness plus the active agent and auth modes.
+- `POST /api/copilotkit` (frontend) — CopilotKit runtime endpoint bridging to the
+  backend.
 
-- `custom` (default), the hand-built AG-UI/SSE client with the event inspector.
-  Human-in-the-loop works end to end via `/agui/resume`.
-- `copilotkit`, the CopilotKit provider and `CopilotChat`, with every card
-  defined through `useCopilotAction` in `components/copilot/CopilotGenerativeUI.tsx`
-  and a `/api/copilotkit` runtime route bridging to the AG-UI backend.
+## Configuration reference
 
-### Scenario agents
-
-`agents/` holds scenario-specific agents (research assistant, doc writer, data
-analyst, support triage), each showcasing a different mix of card types. They
-appear in the sidebar and are selected per conversation. See `agents/README.md`.
-
-For a full status, the CopilotKit card-suitability breakdown, and the roadmap,
-see `docs/PROJECT_STATUS_AND_ROADMAP.md`.
-
-## Environment variables
-
-See `.env.example` for the full list. Key ones:
+See `.env.example` for the full, commented list. Highlights:
 
 | Variable | Meaning |
 | --- | --- |
-| `AGENT_MODE` | `mock` (scripted, no external calls) or `langgraph` (real model) |
+| `AGENT_MODE` | `mock` (scripted) or `langgraph` (real model) |
 | `AUTH_MODE` | `dev` (stub identity) or `entra` (validate Entra bearer) |
-| `MARKETPLACE_*` | GenAI Marketplace gateway URL, key, model, stream mode |
+| `MARKETPLACE_*` | Gateway URL, key, model, `stream`/`chunked` mode |
 | `DATABASE_URL` | async Postgres connection string |
 | `NEXT_PUBLIC_BACKEND_URL` | where the frontend sends AG-UI runs |
+| `NEXT_PUBLIC_CLIENT` | `custom` or `copilotkit` |
+| `BACKEND_URL` | server-side URL the CopilotKit runtime route calls |
 | `NEXT_PUBLIC_AUTH_MODE` | `dev` or `entra` for the frontend |
 
-## Endpoints
+## Testing and verification
 
-- `POST /agui/run`, body is `RunAgentInput`, response is the AG-UI event stream
-  (`text/event-stream`, `Cache-Control: no-cache`, `X-Accel-Buffering: no`,
-  keepalive every 15s). Persists the user turn and assistant result.
-- `POST /agui/resume`, resolves a suspended run with the approval decision.
-- `GET /agui/runs/{run_id}/log`, pulls the captured event log for a run.
-- `GET /conversations`, `GET /conversations/{id}`, `POST /conversations`.
-- `GET /agents`, the callable agent list for the sidebar.
+```bash
+# backend, translator + HITL + ordering-lint tests
+cd backend && source .venv/bin/activate && pytest -q
 
-## Sign-in
+# frontend, typecheck and production build
+cd frontend && npm run typecheck && npm run build
+```
 
-Phase 1 defaults to a dev stub identity. To require Microsoft Entra sign-in, set
-`AUTH_MODE=entra` (backend validates the bearer against the tenant JWKS) and
-`NEXT_PUBLIC_AUTH_MODE=entra`, then wire the MSAL token acquisition in
-`frontend/lib/auth.ts` (the stub returns a placeholder today). History and runs
-are scoped to the signed-in user in both modes.
+## Event logs and evidence
 
-## Demo-scope simplifications
+Each run writes one JSON line per AG-UI event to
+`backend/run_logs/<run_id>.jsonl` with `run_id`, `thread_id`, and `user`. The
+ordering lint lives in `app/agui/lint.py` and is exercised by
+`tests/test_event_order.py`. A captured, lint-clean sample is checked in at
+`docs/sample_run_log.jsonl`.
 
-- **In-memory resume.** Human-in-the-loop suspension uses a per-run
-  `asyncio.Event` keyed by `run_id` (`backend/app/agui/resume.py`). A production
-  system would back this with a durable workflow engine so a suspended run
-  survives a restart. **Temporal is intentionally not used here.**
-- **Marketplace gateway** is assumed OpenAI-compatible; a chunked fallback ships
-  for when streaming is unavailable.
-- The demo knowledge base and the LangGraph plan heuristics are intentionally
-  tiny, one tool and one document capability.
+## Cloud deployment
 
-## Event logs and evidence (M6)
+Prepared for later, manual runs:
 
-Each run writes one JSON line per AG-UI event to `backend/run_logs/<run_id>.jsonl`
-with `run_id`, `thread_id`, and `user`, so a run can be pulled, linted, and
-replayed. The ordering lint lives in `backend/app/agui/lint.py` and is exercised
-by `backend/tests/test_event_order.py`. A captured, lint-clean sample is checked
-in at `docs/sample_run_log.jsonl`.
-
-## Cloud phases (prepared, deployed manually later)
-
-- **Phase 2, AgentCore**: `deploy/agentcore/` packages the same agent behind the
-  AgentCore runtime contract, with a Dockerfile supporting both the AgentCore
-  CLI and the ECR-then-register paths.
-- **Phase 3, EKS**: `deploy/eks/` is a minimal Helm chart for frontend and
+- **Phase 2, AgentCore** — `deploy/agentcore/` packages the same agent behind the
+  AgentCore runtime contract, Dockerfile supporting both the CLI and the
+  ECR-then-register paths.
+- **Phase 3, EKS** — `deploy/eks/` is a minimal Helm chart for frontend and
   backend, RDS via env, Entra required.
 
-Both are described step by step in their own `README.md`. This repository
-prepares everything those phases need but does not perform the cloud deploys.
+Each has its own `README.md` with step-by-step commands.
 
-## Findings
+## Troubleshooting
 
-See `docs/FINDINGS.md` for the Marketplace streaming answer, the AgentCore fit
-answer, the CopilotKit decision, and what worked / what surprised.
+- **Sidebar history is empty** — Postgres is not running; `docker compose up -d
+  postgres`. Runs still stream without it.
+- **No streamed answer with a real model** — check `MARKETPLACE_*` and set
+  `AGENT_MODE=langgraph`; the active stream mode is logged as `marketplace_call`.
+- **CopilotKit npm install fails** — use `npm install --legacy-peer-deps`.
+- **SSE looks buffered behind a proxy** — the backend sets `X-Accel-Buffering:
+  no`; confirm the proxy or load balancer does not buffer `text/event-stream`.
+- **CORS errors** — set `CORS_ALLOW_ORIGINS` to the frontend origin.
+
+## Roadmap and status
+
+`TODO.md` lists the remaining work. `docs/PROJECT_STATUS_AND_ROADMAP.md` covers
+what is done, which CopilotKit primitives fit which message type, and next
+steps. `docs/FINDINGS.md` records the Marketplace streaming, AgentCore fit, and
+CopilotKit decisions, and what surprised us.
