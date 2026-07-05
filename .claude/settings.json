@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pytest:*)",
+      "Bash(python scripts/smoke_e2e.py)",
+      "Bash(python -m pytest:*)",
+      "Bash(ruff:*)",
+      "Bash(uvicorn:*)",
+      "Bash(npm run typecheck)",
+      "Bash(npm run lint)",
+      "Bash(npm run build)",
+      "Bash(npm run dev)",
+      "Bash(npm install:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(curl localhost:*)",
+      "Bash(curl -s localhost:*)"
+    ],
+    "deny": []
+  }
+}

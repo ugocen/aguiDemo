@@ -273,8 +273,18 @@ CopilotKit client'ı denemek için `.env`: `NEXT_PUBLIC_CLIENT=copilotkit`.
 **Doğrulama komutları:**
 ```bash
 cd backend && source .venv/bin/activate && pytest -q          # 4/4 geçmeli
+cd backend && source .venv/bin/activate && python scripts/smoke_e2e.py  # uçtan uca SSE smoke
 cd frontend && npm run typecheck && npm run lint && npm run build
 ```
+
+**Claude Code kurulumu (bu repo local session için hazır):**
+- `CLAUDE.md` — proje hafızası (komutlar, mimari değişmezleri, tuzaklar).
+- `.claude/agents/` — subagent'lar: `card-type-builder` (yeni kart tipi ekler),
+  `scenario-agent-builder` (yeni senaryo ajanı), `agui-verifier` (doğrular).
+- `.claude/commands/` — slash komutları: `/verify`, `/smoke`, `/run`, `/add-card`,
+  `/new-scenario`.
+- `.claude/settings.json` — sık dev komutları için izin listesi (prompt azaltır).
+- `backend/scripts/smoke_e2e.py` — committed uçtan uca doğrulama (exit code'lu).
 
 ---
 
