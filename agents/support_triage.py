@@ -11,7 +11,7 @@ from app.agent.events import (
     ToolCallStarted,
 )
 from app.agent.tools import lookup_knowledge
-from app.agui.catalog import APPROVAL_TOOL, FOLLOWUP_TOOL, LOOKUP_TOOL
+from app.agui.catalog import APPROVAL_TOOL, FOLLOWUP_TOOL, FORM_TOOL, LOOKUP_TOOL
 from app.agui.resume import ApprovalDecision
 
 from agents._common import call_id, tokens
@@ -52,6 +52,19 @@ class SupportTriageAgent:
         else:
             for token in tokens(" Not escalated. Sharing self-serve steps."):
                 yield TextDelta(token)
+
+        yield ToolCallStarted(
+            tool_call_id=call_id(),
+            name=FORM_TOOL,
+            args={
+                "title": "Open a ticket",
+                "submitLabel": "Create ticket",
+                "fields": [
+                    {"name": "email", "label": "Contact email", "type": "email", "placeholder": "you@example.com"},
+                    {"name": "summary", "label": "One-line summary", "type": "text", "placeholder": issue},
+                ],
+            },
+        )
 
         yield ToolCallStarted(
             tool_call_id=call_id(),

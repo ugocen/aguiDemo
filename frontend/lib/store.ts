@@ -5,7 +5,9 @@ import { AguiEvent, JsonPatchOp, newId } from "./agui";
 import {
   APPROVAL_TOOL,
   CHART_TOOL,
+  CITATIONS_TOOL,
   FOLLOWUP_TOOL,
+  FORM_TOOL,
   LOOKUP_TOOL,
   SUGGESTED_QUESTIONS_TOOL,
   TABLE_TOOL,
@@ -79,6 +81,35 @@ export interface ChartItem {
   points: ChartPoint[];
 }
 
+export interface CitationSource {
+  title: string;
+  url: string;
+  snippet: string;
+}
+
+export interface CitationsItem {
+  kind: "citations";
+  id: string;
+  title: string;
+  sources: CitationSource[];
+}
+
+export interface FormField {
+  name: string;
+  label: string;
+  type: string;
+  placeholder: string;
+}
+
+export interface FormItem {
+  kind: "form";
+  id: string;
+  title: string;
+  submitLabel: string;
+  fields: FormField[];
+  submitted: Record<string, string> | null;
+}
+
 export interface ErrorItem {
   kind: "error";
   id: string;
@@ -93,6 +124,8 @@ export type ChatItem =
   | TableItem
   | FollowUpItem
   | ChartItem
+  | CitationsItem
+  | FormItem
   | ErrorItem;
 
 export type EventCategory = "lifecycle" | "text" | "tool" | "state" | "other";
@@ -133,6 +166,7 @@ interface StoreState {
   setSuggestedQuestions: (questions: string[]) => void;
   handleEvent: (event: AguiEvent) => void;
   setApprovalDecision: (id: string, approved: boolean, reason: string) => void;
+  setFormSubmitted: (id: string, values: Record<string, string>) => void;
   clearEventLog: () => void;
 }
 
@@ -264,6 +298,13 @@ export const useStore = create<StoreState>((set, get) => ({
       ),
     })),
 
+  setFormSubmitted: (id, values) =>
+    set((s) => ({
+      items: s.items.map((item) =>
+        item.kind === "form" && item.id === id ? { ...item, submitted: values } : item,
+      ),
+    })),
+
   handleEvent: (event) => {
     const state = get();
 
@@ -366,6 +407,21 @@ export const useStore = create<StoreState>((set, get) => ({
               items: [...s.items, { kind: "chart", id, title: "", unit: "", points: [] }],
             };
           }
+          if (name === CITATIONS_TOOL) {
+            return {
+              toolNames,
+              items: [...s.items, { kind: "citations", id, title: "", sources: [] }],
+            };
+          }
+          if (name === FORM_TOOL) {
+            return {
+              toolNames,
+              items: [
+                ...s.items,
+                { kind: "form", id, title: "", submitLabel: "Submit", fields: [], submitted: null },
+              ],
+            };
+          }
           return { toolNames };
         });
         break;
@@ -442,6 +498,42 @@ export const useStore = create<StoreState>((set, get) => ({
             items: s.items.map((item) =>
               item.kind === "chart" && item.id === id
                 ? { ...item, title: String(args.title ?? ""), unit: String(args.unit ?? ""), points }
+                : item,
+            ),
+          }));
+        } else if (name === CITATIONS_TOOL) {
+          const sources = Array.isArray(args.sources)
+            ? (args.sources as Array<Record<string, unknown>>).map((source) => ({
+                title: String(source.title ?? ""),
+                url: String(source.url ?? ""),
+                snippet: String(source.snippet ?? ""),
+              }))
+            : [];
+          set((s) => ({
+            items: s.items.map((item) =>
+              item.kind === "citations" && item.id === id
+                ? { ...item, title: String(args.title ?? ""), sources }
+                : item,
+            ),
+          }));
+        } else if (name === FORM_TOOL) {
+          const fields = Array.isArray(args.fields)
+            ? (args.fields as Array<Record<string, unknown>>).map((field) => ({
+                name: String(field.name ?? ""),
+                label: String(field.label ?? ""),
+                type: String(field.type ?? "text"),
+                placeholder: String(field.placeholder ?? ""),
+              }))
+            : [];
+          set((s) => ({
+            items: s.items.map((item) =>
+              item.kind === "form" && item.id === id
+                ? {
+                    ...item,
+                    title: String(args.title ?? ""),
+                    submitLabel: String(args.submitLabel ?? "Submit"),
+                    fields,
+                  }
                 : item,
             ),
           }));

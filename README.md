@@ -229,6 +229,8 @@ The agent sends different message types over AG-UI and each maps to a component:
 | Chart | `renderChart` call | `ChartCard` (SVG bars) | `useCopilotAction` render |
 | Follow-up / next steps | `renderFollowUp` call | `FollowUpCard` | `useCopilotAction` render |
 | Suggested questions | `renderSuggestedQuestions` call | chips | `useCopilotAction` render |
+| Citations / sources | `renderCitations` call | `CitationsCard` | `useCopilotAction` render |
+| Form (structured input) | `renderForm` call | `FormCard` | `renderAndWaitForResponse` |
 | Approval (HITL) | `requestApproval` + `/agui/resume` | `ApprovalCard` | `renderAndWaitForResponse` |
 | Canvas edits | `STATE_SNAPSHOT` / `STATE_DELTA` | Tiptap canvas | (roadmap: `useCoAgent`) |
 

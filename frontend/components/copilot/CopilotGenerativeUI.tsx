@@ -1,11 +1,15 @@
 "use client";
 
+import { useState } from "react";
+
 import { useCopilotAction } from "@copilotkit/react-core";
 
 import {
   APPROVAL_TOOL,
   CHART_TOOL,
+  CITATIONS_TOOL,
   FOLLOWUP_TOOL,
+  FORM_TOOL,
   LOOKUP_TOOL,
   SUGGESTED_QUESTIONS_TOOL,
   TABLE_TOOL,
@@ -35,6 +39,71 @@ interface ChartArgs {
   title?: string;
   unit?: string;
   series?: Array<{ label?: string; value?: number }>;
+}
+
+interface CitationsArgs {
+  title?: string;
+  sources?: Array<{ title?: string; url?: string; snippet?: string }>;
+}
+
+interface FormField {
+  name?: string;
+  label?: string;
+  type?: string;
+  placeholder?: string;
+}
+
+interface FormArgs {
+  title?: string;
+  submitLabel?: string;
+  fields?: FormField[];
+}
+
+function CopilotFormRender({
+  args,
+  respond,
+}: {
+  args: FormArgs;
+  respond?: (value: unknown) => void;
+}) {
+  const fields = args.fields ?? [];
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [done, setDone] = useState(false);
+
+  function submit() {
+    if (done || !respond) return;
+    setDone(true);
+    respond(values);
+  }
+
+  return (
+    <div className="card">
+      <span className="tool-badge">form, {FORM_TOOL}</span>
+      {args.title && <div style={{ fontWeight: 600, marginBottom: 10 }}>{args.title}</div>}
+      {fields.map((field) => (
+        <div key={field.name} className="form-row">
+          <label className="form-label">{field.label}</label>
+          <input
+            className="form-input"
+            type={field.type === "number" ? "number" : field.type === "email" ? "email" : "text"}
+            placeholder={field.placeholder}
+            disabled={done}
+            value={values[field.name ?? ""] ?? ""}
+            onChange={(event) =>
+              setValues((prev) => ({ ...prev, [field.name ?? ""]: event.target.value }))
+            }
+          />
+        </div>
+      ))}
+      {done ? (
+        <div style={{ color: "var(--ok)" }}>Submitted</div>
+      ) : (
+        <button className="btn approve" onClick={submit}>
+          {args.submitLabel || "Submit"}
+        </button>
+      )}
+    </div>
+  );
 }
 
 /**
@@ -169,6 +238,43 @@ export function CopilotGenerativeUI() {
         </div>
       );
     },
+  });
+
+  useCopilotAction({
+    name: CITATIONS_TOOL,
+    available: "disabled",
+    render: (props: { args: CitationsArgs }) => {
+      const { title, sources = [] } = props.args ?? {};
+      return (
+        <div className="card">
+          <span className="tool-badge">citations, {CITATIONS_TOOL}</span>
+          {title && <div style={{ fontWeight: 600, marginBottom: 8 }}>{title}</div>}
+          <ol className="citations-list">
+            {sources.map((source, index) => (
+              <li key={index}>
+                {source.url ? (
+                  <a href={source.url} target="_blank" rel="noreferrer" className="citation-title">
+                    {source.title}
+                  </a>
+                ) : (
+                  <span className="citation-title">{source.title}</span>
+                )}
+                {source.snippet && <div className="citation-snippet">{source.snippet}</div>}
+              </li>
+            ))}
+          </ol>
+        </div>
+      );
+    },
+  });
+
+  useCopilotAction({
+    name: FORM_TOOL,
+    available: "disabled",
+    renderAndWaitForResponse: (props: {
+      args: FormArgs;
+      respond?: (value: unknown) => void;
+    }) => <CopilotFormRender args={props.args ?? {}} respond={props.respond} />,
   });
 
   useCopilotAction({

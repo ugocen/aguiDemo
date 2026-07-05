@@ -10,7 +10,12 @@ from app.agent.events import (
     ToolCallStarted,
 )
 from app.agent.tools import lookup_knowledge
-from app.agui.catalog import LOOKUP_TOOL, SUGGESTED_QUESTIONS_TOOL, TABLE_TOOL
+from app.agui.catalog import (
+    CITATIONS_TOOL,
+    LOOKUP_TOOL,
+    SUGGESTED_QUESTIONS_TOOL,
+    TABLE_TOOL,
+)
 
 from agents._common import call_id, tokens
 
@@ -51,6 +56,26 @@ class ResearchAssistantAgent:
                     ["Knowledge base", "high", result["answer"][:60] + "..."],
                     ["Protocol spec", "medium", "Typed events over SSE"],
                     ["Community docs", "medium", "Examples and integrations"],
+                ],
+            },
+        )
+
+        yield ToolCallStarted(
+            tool_call_id=call_id(),
+            name=CITATIONS_TOOL,
+            args={
+                "title": "Sources",
+                "sources": [
+                    {
+                        "title": "AG-UI protocol",
+                        "url": "https://docs.ag-ui.com",
+                        "snippet": "Typed events streamed over SSE.",
+                    },
+                    {
+                        "title": "Demo knowledge base",
+                        "url": "",
+                        "snippet": result["answer"][:60] + "...",
+                    },
                 ],
             },
         )

@@ -4,6 +4,8 @@ export const APPROVAL_TOOL = "requestApproval";
 export const TABLE_TOOL = "renderTable";
 export const FOLLOWUP_TOOL = "renderFollowUp";
 export const CHART_TOOL = "renderChart";
+export const CITATIONS_TOOL = "renderCitations";
+export const FORM_TOOL = "renderForm";
 
 export interface ToolSchema {
   name: string;
@@ -107,6 +109,56 @@ export function toolCatalog(): ToolSchema[] {
           },
         },
         required: ["series"],
+      },
+    },
+    {
+      name: CITATIONS_TOOL,
+      description: "Render a list of sources with titles, links, and snippets.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Section heading." },
+          sources: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                title: { type: "string" },
+                url: { type: "string" },
+                snippet: { type: "string" },
+              },
+              required: ["title"],
+            },
+            description: "Cited sources.",
+          },
+        },
+        required: ["sources"],
+      },
+    },
+    {
+      name: FORM_TOOL,
+      description: "Ask the user for structured input by rendering a form.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Form heading." },
+          submitLabel: { type: "string", description: "Submit button text." },
+          fields: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                name: { type: "string" },
+                label: { type: "string" },
+                type: { type: "string", description: "text, email, or number." },
+                placeholder: { type: "string" },
+              },
+              required: ["name", "label"],
+            },
+            description: "Fields to collect.",
+          },
+        },
+        required: ["fields"],
       },
     },
   ];

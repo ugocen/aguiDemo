@@ -8,7 +8,9 @@ import { toolCatalog } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
 import { ApprovalCard } from "@/components/catalog/ApprovalCard";
 import { ChartCard } from "@/components/catalog/ChartCard";
+import { CitationsCard } from "@/components/catalog/CitationsCard";
 import { FollowUpCard } from "@/components/catalog/FollowUpCard";
+import { FormCard } from "@/components/catalog/FormCard";
 import { SuggestedQuestions } from "@/components/catalog/SuggestedQuestions";
 import { TableCard } from "@/components/catalog/TableCard";
 import { ToolCard } from "@/components/catalog/ToolCard";
@@ -113,6 +115,12 @@ export function ChatArea() {
           }
           if (item.kind === "chart") {
             return <ChartCard key={item.id} item={item} />;
+          }
+          if (item.kind === "citations") {
+            return <CitationsCard key={item.id} item={item} />;
+          }
+          if (item.kind === "form") {
+            return <FormCard key={item.id} item={item} onSubmit={(text) => send(text)} />;
           }
           return (
             <div key={item.id} className="message-row">

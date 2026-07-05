@@ -29,7 +29,9 @@ summarized in `docs/PROJECT_STATUS_AND_ROADMAP.md`.
       render with `useCoAgentStateRender`.
 - [ ] **Scenario selection in CopilotKit mode** — pass the selected agent id to
       the CopilotKit HttpAgent.
-- [ ] **More card types** — citations/sources list and a form (structured input).
+- [x] **More card types** — citations/sources list and a form (structured input).
+      Citations render-only; form submits collected values back (custom: as the
+      next user turn; CopilotKit: via renderAndWaitForResponse).
 
 ## Later (needs credentials or is manual)
 

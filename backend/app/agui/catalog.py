@@ -6,6 +6,8 @@ APPROVAL_TOOL = "requestApproval"
 TABLE_TOOL = "renderTable"
 FOLLOWUP_TOOL = "renderFollowUp"
 CHART_TOOL = "renderChart"
+CITATIONS_TOOL = "renderCitations"
+FORM_TOOL = "renderForm"
 
 
 def tool_catalog() -> list[dict[str, Any]]:
@@ -121,6 +123,56 @@ def tool_catalog() -> list[dict[str, Any]]:
                     },
                 },
                 "required": ["series"],
+            },
+        },
+        {
+            "name": CITATIONS_TOOL,
+            "description": "Render a list of sources with titles, links, and snippets.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string", "description": "Section heading."},
+                    "sources": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "title": {"type": "string"},
+                                "url": {"type": "string"},
+                                "snippet": {"type": "string"},
+                            },
+                            "required": ["title"],
+                        },
+                        "description": "Cited sources.",
+                    },
+                },
+                "required": ["sources"],
+            },
+        },
+        {
+            "name": FORM_TOOL,
+            "description": "Ask the user for structured input by rendering a form.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string", "description": "Form heading."},
+                    "submitLabel": {"type": "string", "description": "Submit button text."},
+                    "fields": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {"type": "string"},
+                                "label": {"type": "string"},
+                                "type": {"type": "string", "description": "text, email, or number."},
+                                "placeholder": {"type": "string"},
+                            },
+                            "required": ["name", "label"],
+                        },
+                        "description": "Fields to collect.",
+                    },
+                },
+                "required": ["fields"],
             },
         },
     ]

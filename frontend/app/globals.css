@@ -384,6 +384,52 @@ body {
   color: var(--muted);
 }
 
+.citations-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.citations-list li {
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.citation-title {
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.citation-snippet {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+.form-row {
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.form-input {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.form-input:disabled {
+  background: rgba(0, 0, 0, 0.03);
+}
+
 .inspector {
   height: 220px;
   min-height: 220px;
