@@ -37,9 +37,7 @@ export default function WorkspacePage() {
           )}
         </div>
         {useCopilot ? (
-          <main className="main">
-            <CopilotChatArea />
-          </main>
+          <CopilotChatArea />
         ) : (
           <>
             <main className="main">

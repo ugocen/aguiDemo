@@ -22,13 +22,13 @@ summarized in `docs/PROJECT_STATUS_AND_ROADMAP.md`.
 - [x] **Chart/metrics card type** — `renderChart` in both catalogs, inline SVG
       bar chart (custom) + `useCopilotAction` render (CopilotKit), used by the
       data-analyst scenario.
-- [ ] **CopilotKit-native HITL** — make `renderAndWaitForResponse` approval work
-      end to end (backend mode that ends the run and consumes the tool result on
-      the next run, or bridge respond() to `/agui/resume`). Needs browser test.
-- [ ] **Canvas in CopilotKit mode** — expose shared state via `useCoAgent` and
-      render with `useCoAgentStateRender`.
-- [ ] **Scenario selection in CopilotKit mode** — pass the selected agent id to
-      the CopilotKit HttpAgent.
+- [x] **CopilotKit-native HITL** — approval `renderAndWaitForResponse` bridges to
+      `/agui/resume` (the backend injects `runId` into the approval args). Build
+      verified; needs a browser to confirm the round-trip end to end.
+- [x] **Canvas in CopilotKit mode** — the shared document state is read via
+      `useCoAgent` and rendered by `CopilotCanvasPanel`.
+- [x] **Scenario selection in CopilotKit mode** — the selected agent id is passed
+      through the CopilotKit provider `properties`, forwarded to the backend.
 - [x] **More card types** — citations/sources list and a form (structured input).
       Citations render-only; form submits collected values back (custom: as the
       next user turn; CopilotKit: via renderAndWaitForResponse).

@@ -85,16 +85,20 @@ uyduğu:
 Bunların hepsi backend catalog'u ile birebir aynı isimlerde; ajan tool'u isimle
 çağırır, CopilotKit eşleşen render'ı sohbet içinde gösterir.
 
+### CopilotKit modunda artık hazır olanlar
+- **Canvas**: shared-state doküman `useCoAgent` ile okunuyor ve
+  `CopilotCanvasPanel` ile canlı render ediliyor.
+- **Senaryo seçimi**: sidebar'daki seçili ajan id'si CopilotKit provider
+  `properties`'i ile `forwardedProps` olarak backend'e geçiyor.
+- **HITL onayı**: backend onay tool-call args'ına `runId` enjekte ediyor;
+  CopilotKit onay kartı hem `respond()` çağırıyor hem de `/agui/resume`'a köprü
+  kuruyor.
+
 ### Şu an bilinen sınır
-- **CopilotKit modunda HITL round-trip**: bizim backend onayda run'ı suspend edip
-  `/agui/resume` bekliyor; CopilotKit'in native HITL'i ise `respond()` sonucunu
-  bir sonraki run'a tool mesajı olarak ekliyor. Kart render'ı hazır ve build
-  geçiyor, ancak tam uçtan uca onay için backend'e CopilotKit-native HITL modu
-  eklenmeli (aşağıda roadmap). `custom` client'ta HITL zaten uçtan uca çalışıyor.
-- **Canvas**: `custom` client'ta çalışıyor; CopilotKit modunda `useCoAgent` ile
-  bağlanması bir sonraki adım.
-- CopilotKit doğrulaması derleme/bundling seviyesinde yapıldı; tam görsel
-  doğrulama için tarayıcı + çalışan backend gerekir.
+- CopilotKit doğrulaması **derleme/bundling** seviyesinde yapıldı (`tsc` +
+  `next build` geçiyor). HITL round-trip ve canvas'ın görsel davranışının tam
+  doğrulaması için **tarayıcı + çalışan backend** gerekir; bu ortamda tarayıcı
+  yok. `custom` client'ta HITL ve canvas zaten uçtan uca çalışıyor.
 
 ---
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { useCopilotAction } from "@copilotkit/react-core";
 
+import { resumeRun } from "@/lib/agui";
 import {
   APPROVAL_TOOL,
   CHART_TOOL,
@@ -33,6 +34,7 @@ interface LookupArgs {
 interface ApprovalArgs {
   action?: string;
   detail?: string;
+  runId?: string;
 }
 
 interface ChartArgs {
@@ -285,8 +287,14 @@ export function CopilotGenerativeUI() {
       args: ApprovalArgs;
       respond?: (value: unknown) => void;
     }) => {
-      const { action, detail } = props.args ?? {};
+      const { action, detail, runId } = props.args ?? {};
       const disabled = props.status === "complete" || !props.respond;
+      const decide = (approved: boolean, reason: string) => {
+        if (runId) {
+          void resumeRun(runId, approved, reason);
+        }
+        props.respond?.({ approved, reason });
+      };
       return (
         <div className="card">
           <span className="tool-badge">approval required</span>
@@ -296,14 +304,14 @@ export function CopilotGenerativeUI() {
             <button
               className="btn approve"
               disabled={disabled}
-              onClick={() => props.respond?.({ approved: true, reason: "approved by user" })}
+              onClick={() => decide(true, "approved by user")}
             >
               Approve
             </button>
             <button
               className="btn reject"
               disabled={disabled}
-              onClick={() => props.respond?.({ approved: false, reason: "rejected by user" })}
+              onClick={() => decide(false, "rejected by user")}
             >
               Reject
             </button>

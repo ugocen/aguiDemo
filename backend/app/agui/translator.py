@@ -221,11 +221,12 @@ class Translator:
                             tool_call_name=agent_event.name,
                         )
                     )
+                    approval_args = {**agent_event.args, "runId": run_id}
                     yield self._emit(
                         ToolCallArgsEvent(
                             type=EventType.TOOL_CALL_ARGS,
                             tool_call_id=agent_event.tool_call_id,
-                            delta=json.dumps(agent_event.args),
+                            delta=json.dumps(approval_args),
                         )
                     )
                     yield self._emit(

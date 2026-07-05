@@ -211,7 +211,7 @@ events** (top bar, custom client) to watch the raw AG-UI stream live.
 | Mode | What it uses | Notes |
 | --- | --- | --- |
 | `custom` (default) | Hand-built AG-UI/SSE client in `lib/agui.ts`, Zustand store, hand-built cards, and a live **Event Inspector** | Human-in-the-loop works end to end via `/agui/resume` |
-| `copilotkit` | CopilotKit provider + `CopilotChat`, cards via `useCopilotAction`, `/api/copilotkit` runtime route bridging to the backend with an AG-UI `HttpAgent` | Cards and streaming work; end-to-end approval needs the CopilotKit-native HITL step (see roadmap) |
+| `copilotkit` | CopilotKit provider + `CopilotChat`, cards via `useCopilotAction`, `/api/copilotkit` runtime route bridging to the backend with an AG-UI `HttpAgent`. Canvas via `useCoAgent`, scenario selection via provider `properties`, approval bridged to `/agui/resume` | Build-verified; full runtime behavior needs a browser |
 
 All AG-UI wiring is isolated (custom: `lib/agui.ts`; CopilotKit:
 `components/copilot/` + `app/api/copilotkit/route.ts`), so the endpoint target
