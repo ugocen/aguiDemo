@@ -1,0 +1,11 @@
+.git
+**/node_modules
+**/.next
+**/.venv
+**/__pycache__
+**/*.pyc
+backend/run_logs/*.jsonl
+backend/tests
+frontend
+docs
+.env

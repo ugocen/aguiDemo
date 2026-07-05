@@ -1,3 +1,5 @@
+# Build from the repository root so the scenario agents ship in the image:
+#   docker build -f backend/Dockerfile -t agui-demo-backend:latest .
 FROM python:3.11-slim
 
 ENV PYTHONUNBUFFERED=1 \
@@ -5,10 +7,11 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-COPY pyproject.toml ./
+COPY backend/pyproject.toml ./
 RUN pip install --upgrade pip && pip install .
 
-COPY app ./app
+COPY backend/app ./app
+COPY agents ./agents
 
 EXPOSE 8000
 

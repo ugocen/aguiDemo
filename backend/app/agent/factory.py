@@ -9,10 +9,18 @@ from app.logging.setup import get_logger
 log = get_logger("agent_factory")
 
 
-def _ensure_agents_on_path() -> None:
-    repo_root = Path(__file__).resolve().parents[3]
-    if str(repo_root) not in sys.path:
-        sys.path.insert(0, str(repo_root))
+def ensure_agents_on_path() -> bool:
+    """Put the directory containing the top-level ``agents`` package on sys.path.
+
+    Walks up from this file so the same code works from the source tree and from
+    container layouts where the package sits next to ``app``.
+    """
+    for candidate in Path(__file__).resolve().parents:
+        if (candidate / "agents" / "registry.py").exists():
+            if str(candidate) not in sys.path:
+                sys.path.insert(0, str(candidate))
+            return True
+    return False
 
 
 def build_agent(settings: Settings, agent_id: str | None = None):
@@ -23,7 +31,7 @@ def build_agent(settings: Settings, agent_id: str | None = None):
     the scripted mock.
     """
     if agent_id:
-        _ensure_agents_on_path()
+        ensure_agents_on_path()
         try:
             from agents.registry import build_scenario_agent
 

@@ -11,12 +11,13 @@ import { FormItem, useStore } from "@/lib/store";
  */
 export function FormCard({ item, onSubmit }: { item: FormItem; onSubmit: (text: string) => void }) {
   const setFormSubmitted = useStore((s) => s.setFormSubmitted);
+  const isRunning = useStore((s) => s.isRunning);
   const [values, setValues] = useState<Record<string, string>>({});
 
   const submitted = item.submitted !== null;
 
   function submit() {
-    if (submitted) return;
+    if (submitted || isRunning) return;
     const filled: Record<string, string> = {};
     for (const field of item.fields) {
       filled[field.name] = values[field.name] ?? "";
@@ -50,7 +51,7 @@ export function FormCard({ item, onSubmit }: { item: FormItem; onSubmit: (text: 
       {submitted ? (
         <div style={{ color: "var(--ok)" }}>Submitted</div>
       ) : (
-        <button className="btn approve" onClick={submit}>
+        <button className="btn approve" disabled={isRunning} onClick={submit}>
           {item.submitLabel || "Submit"}
         </button>
       )}

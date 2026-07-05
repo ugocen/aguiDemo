@@ -9,6 +9,7 @@ COPY backend/pyproject.toml ./backend/pyproject.toml
 RUN pip install --upgrade pip && pip install ./backend
 
 COPY backend/app ./backend/app
+COPY agents ./agents
 COPY deploy/agentcore/agentcore_app.py ./agentcore_app.py
 
 EXPOSE 8080

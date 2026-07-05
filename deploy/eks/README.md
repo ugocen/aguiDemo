@@ -6,8 +6,11 @@ local Postgres via `secrets.DATABASE_URL`, Entra sign-in is required
 
 ## Build and push images
 
+Run the backend build from the repository root so the scenario agents in
+`agents/` ship in the image:
+
 ```bash
-docker build -f backend/Dockerfile -t <repo>/agui-demo-backend:latest backend
+docker build -f backend/Dockerfile -t <repo>/agui-demo-backend:latest .
 docker build -f frontend/Dockerfile -t <repo>/agui-demo-frontend:latest frontend
 docker push <repo>/agui-demo-backend:latest
 docker push <repo>/agui-demo-frontend:latest

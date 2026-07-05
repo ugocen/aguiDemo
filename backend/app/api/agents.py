@@ -28,12 +28,10 @@ def _parse_agents(raw: str) -> list[AgentDescriptor]:
 
 
 def _scenario_agents() -> list[AgentDescriptor]:
-    import sys
-    from pathlib import Path
+    from app.agent.factory import ensure_agents_on_path
 
-    repo_root = Path(__file__).resolve().parents[3]
-    if str(repo_root) not in sys.path:
-        sys.path.insert(0, str(repo_root))
+    if not ensure_agents_on_path():
+        return []
     try:
         from agents.registry import scenario_descriptors
 
