@@ -114,6 +114,25 @@ grouped by category (lifecycle, text, tool, state), so the raw stream behind the
 rendered cards is visible. Adding a new card type is: declare a tool in both
 catalogs, handle its name in the store reducer, and add a component.
 
+### Two AG-UI clients
+
+`NEXT_PUBLIC_CLIENT` selects the frontend client:
+
+- `custom` (default), the hand-built AG-UI/SSE client with the event inspector.
+  Human-in-the-loop works end to end via `/agui/resume`.
+- `copilotkit`, the CopilotKit provider and `CopilotChat`, with every card
+  defined through `useCopilotAction` in `components/copilot/CopilotGenerativeUI.tsx`
+  and a `/api/copilotkit` runtime route bridging to the AG-UI backend.
+
+### Scenario agents
+
+`agents/` holds scenario-specific agents (research assistant, doc writer, data
+analyst, support triage), each showcasing a different mix of card types. They
+appear in the sidebar and are selected per conversation. See `agents/README.md`.
+
+For a full status, the CopilotKit card-suitability breakdown, and the roadmap,
+see `docs/PROJECT_STATUS_AND_ROADMAP.md`.
+
 ## Environment variables
 
 See `.env.example` for the full list. Key ones:

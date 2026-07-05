@@ -32,7 +32,8 @@ async def invocations(input: RunAgentInput) -> StreamingResponse:
     fronting app; this container hosts only the agent and its event stream.
     """
     encoder = EventEncoder()
-    agent = build_agent(settings)
+    forwarded = input.forwarded_props if isinstance(input.forwarded_props, dict) else {}
+    agent = build_agent(settings, agent_id=forwarded.get("agentId"))
     translator = Translator(input=input, agent=agent, user_id="agentcore")
 
     async def body():

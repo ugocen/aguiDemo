@@ -107,7 +107,8 @@ async def run_agent(
     settings: Settings = Depends(get_settings),
 ) -> StreamingResponse:
     encoder = EventEncoder()
-    agent = build_agent(settings)
+    forwarded = input.forwarded_props if isinstance(input.forwarded_props, dict) else {}
+    agent = build_agent(settings, agent_id=forwarded.get("agentId"))
     capture = RunCapture(input.run_id, input.thread_id, principal.user_id)
     translator = Translator(
         input=input, agent=agent, user_id=principal.user_id, capture=capture

@@ -62,7 +62,7 @@ export function ChatArea() {
       messages: [...history, { id: newId("u"), role: "user", content: trimmed }],
       tools: toolCatalog(),
       context: [],
-      forwardedProps: {},
+      forwardedProps: { agentId: selectedAgentId },
     };
 
     try {
