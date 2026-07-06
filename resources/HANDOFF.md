@@ -504,6 +504,17 @@ one, otherwise tool name + date. Examples:
 
 <!-- NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-07-06T02:10Z — Claude-Code (Opus 4.8, 2026-07-06)
+**Did:** Selecting a scenario agent in the sidebar now starts a fresh
+conversation (`AgentList` mirrors `HistoryList.startNew`: clear thread + reset
+chat + refresh list). Also confirmed the langgraph/Gemini path works end to end
+(real ~5s model response via an empty `agentId`) but is currently unreachable
+from the UI: the store auto-selects `agents[0]`, so every run sends a scenario
+`agentId`, which `build_agent` routes to the scripted scenario agent, never the
+LLM. Frontend typecheck/lint/build green.
+**Next:** Optionally expose the real-LLM path in the UI (a "Default (LLM)" entry
+sending an empty `agentId`) or make the scenario agents LLM-driven (#7).
+
 ### 2026-07-06T01:55Z — Claude-Code (Opus 4.8, 2026-07-06)
 **Did:** Fixed the frontend `lib/api.ts` "Failed to fetch" (CORS): the browser
 origin `http://127.0.0.1:3000` was not in the allowlist — added it to
