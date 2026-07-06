@@ -8,6 +8,9 @@ from app.agent.events import (
     AgentEvent,
     ApprovalRequested,
     DocumentDelta,
+    ReasoningDelta,
+    StepFinished,
+    StepStarted,
     TextDelta,
     ToolCallCompleted,
     ToolCallStarted,
@@ -47,16 +50,28 @@ class MockAgent:
     async def run(self, input: RunAgentInput) -> AsyncIterator[AgentEvent]:
         user_text = latest_user_text(input) or "AG-UI"
 
+        yield StepStarted("Thinking")
+        for token in _tokens(
+            "The user wants an answer plus a few cards. I'll look it up, draft a note on the "
+            "canvas, show a comparison table, then ask to finalize."
+        ):
+            yield ReasoningDelta(token)
+        yield StepFinished("Thinking")
+
         for token in _tokens(f'You asked: "{user_text}". Let me look that up first.'):
             yield TextDelta(token)
 
+        yield StepStarted("Looking up")
         lookup_id = _call_id()
         yield ToolCallStarted(tool_call_id=lookup_id, name=LOOKUP_TOOL, args={"query": user_text})
         result = lookup_knowledge(user_text)
         yield ToolCallCompleted(tool_call_id=lookup_id, result=result)
+        yield StepFinished("Looking up")
 
         for token in _tokens(" I'll draft a note on the canvas as I go."):
             yield TextDelta(token)
+
+        yield StepStarted("Rendering")
 
         title = f"Notes on {result.get('matched') or user_text}"
         yield DocumentDelta(patch=[{"op": "replace", "path": "/document/title", "value": title}])
@@ -104,6 +119,8 @@ class MockAgent:
                 ]
             },
         )
+
+        yield StepFinished("Rendering")
 
         approval_id = _call_id()
         decision: ApprovalDecision = yield ApprovalRequested(

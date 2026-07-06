@@ -8,6 +8,23 @@ class TextDelta:
 
 
 @dataclass
+class ReasoningDelta:
+    """A chunk of the model's reasoning / thinking, shown before the answer."""
+
+    text: str
+
+
+@dataclass
+class StepStarted:
+    name: str
+
+
+@dataclass
+class StepFinished:
+    name: str
+
+
+@dataclass
 class ToolCallStarted:
     tool_call_id: str
     name: str
@@ -45,6 +62,9 @@ class ApprovalRequested:
 
 AgentEvent = (
     TextDelta
+    | ReasoningDelta
+    | StepStarted
+    | StepFinished
     | ToolCallStarted
     | ToolCallCompleted
     | DocumentSnapshot

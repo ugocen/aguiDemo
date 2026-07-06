@@ -116,9 +116,29 @@ export interface ErrorItem {
   message: string;
 }
 
+export interface ReasoningItem {
+  kind: "reasoning";
+  id: string;
+  text: string;
+  done: boolean;
+}
+
+export interface StepEntry {
+  name: string;
+  status: "running" | "done";
+}
+
+export interface StepsItem {
+  kind: "steps";
+  id: string;
+  entries: StepEntry[];
+}
+
 export type ChatItem =
   | UserItem
   | AssistantItem
+  | ReasoningItem
+  | StepsItem
   | ToolItem
   | ApprovalItem
   | TableItem
@@ -149,6 +169,7 @@ interface StoreState {
   isRunning: boolean;
   currentRunId: string | null;
   pendingApprovalId: string | null;
+  currentStepsId: string | null;
 
   eventLog: EventLogEntry[];
   eventSeq: number;
@@ -183,6 +204,11 @@ const EVENT_CATEGORY: Record<string, EventCategory> = {
   TOOL_CALL_RESULT: "tool",
   STATE_SNAPSHOT: "state",
   STATE_DELTA: "state",
+  REASONING_MESSAGE_START: "text",
+  REASONING_MESSAGE_CONTENT: "text",
+  REASONING_MESSAGE_END: "text",
+  STEP_STARTED: "lifecycle",
+  STEP_FINISHED: "lifecycle",
 };
 
 function categoryOf(type: string): EventCategory {
@@ -247,6 +273,7 @@ export const useStore = create<StoreState>((set, get) => ({
   isRunning: false,
   currentRunId: null,
   pendingApprovalId: null,
+  currentStepsId: null,
   eventLog: [],
   eventSeq: 0,
   toolNames: {},
@@ -265,6 +292,7 @@ export const useStore = create<StoreState>((set, get) => ({
       suggestedQuestions: [],
       pendingApprovalId: null,
       currentRunId: null,
+      currentStepsId: null,
       eventLog: [],
       eventSeq: 0,
     }),
@@ -328,7 +356,70 @@ export const useStore = create<StoreState>((set, get) => ({
 
     switch (event.type) {
       case "RUN_STARTED":
-        set({ isRunning: true, currentRunId: event.runId ?? null });
+        set({ isRunning: true, currentRunId: event.runId ?? null, currentStepsId: null });
+        break;
+
+      case "STEP_STARTED":
+        set((s) => {
+          const name = event.stepName ?? "";
+          let stepsId = s.currentStepsId;
+          let items = s.items;
+          if (stepsId === null) {
+            stepsId = newId("steps");
+            items = [...items, { kind: "steps", id: stepsId, entries: [] }];
+          }
+          items = items.map((item) =>
+            item.kind === "steps" && item.id === stepsId
+              ? { ...item, entries: [...item.entries, { name, status: "running" as const }] }
+              : item,
+          );
+          return { items, currentStepsId: stepsId };
+        });
+        break;
+
+      case "STEP_FINISHED":
+        set((s) => ({
+          items: s.items.map((item) => {
+            if (item.kind !== "steps" || item.id !== s.currentStepsId) return item;
+            const entries = [...item.entries];
+            for (let i = entries.length - 1; i >= 0; i--) {
+              if (entries[i].name === event.stepName && entries[i].status === "running") {
+                entries[i] = { ...entries[i], status: "done" };
+                break;
+              }
+            }
+            return { ...item, entries };
+          }),
+        }));
+        break;
+
+      case "REASONING_MESSAGE_START":
+        set((s) => ({
+          items: [
+            ...s.items,
+            { kind: "reasoning", id: event.messageId ?? newId("rsn"), text: "", done: false },
+          ],
+        }));
+        break;
+
+      case "REASONING_MESSAGE_CONTENT":
+        set((s) => ({
+          items: s.items.map((item) =>
+            item.kind === "reasoning" && item.id === event.messageId
+              ? { ...item, text: item.text + (typeof event.delta === "string" ? event.delta : "") }
+              : item,
+          ),
+        }));
+        break;
+
+      case "REASONING_MESSAGE_END":
+        set((s) => ({
+          items: s.items.map((item) =>
+            item.kind === "reasoning" && item.id === event.messageId
+              ? { ...item, done: true }
+              : item,
+          ),
+        }));
         break;
 
       case "STATE_SNAPSHOT": {
@@ -566,7 +657,7 @@ export const useStore = create<StoreState>((set, get) => ({
       }
 
       case "RUN_FINISHED":
-        set({ isRunning: false, pendingApprovalId: null });
+        set({ isRunning: false, pendingApprovalId: null, currentStepsId: null });
         break;
 
       case "RUN_ERROR":

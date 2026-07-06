@@ -6,6 +6,7 @@ import httpx
 from app.config.settings import Settings
 from app.llm.base import (
     LLMError,
+    ReasoningChunk,
     StreamChunk,
     TextChunk,
     ToolCallChunk,
@@ -38,7 +39,10 @@ class GeminiClient:
     ) -> AsyncIterator[StreamChunk]:
         log.info("llm_call", provider=self.provider, model=self._model, tools=bool(tools))
         system, rest = split_system(messages)
-        payload: dict = {"contents": _to_contents(rest)}
+        payload: dict = {
+            "contents": _to_contents(rest),
+            "generationConfig": {"thinkingConfig": {"includeThoughts": True}},
+        }
         if system:
             payload["systemInstruction"] = {"parts": [{"text": system}]}
         if tools:
@@ -118,6 +122,8 @@ def _chunks(event: dict) -> list[StreamChunk]:
                     id=tool_call_id(), name=fc.get("name", ""), arguments=dict(fc.get("args") or {})
                 )
             )
+        elif p.get("thought") and p.get("text"):
+            out.append(ReasoningChunk(p["text"]))
         elif p.get("text"):
             out.append(TextChunk(p["text"]))
     return out

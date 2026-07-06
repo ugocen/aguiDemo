@@ -233,3 +233,41 @@ async def test_allowed_tools_restrict_catalog(monkeypatch):
     agent = _agent(monkeypatch, [[TextChunk("hi")]], allowed_tools=[CHART_TOOL])
     tools = agent._tools(_make_input())
     assert [t["name"] for t in tools] == [CHART_TOOL]
+
+
+@pytest.mark.asyncio
+async def test_agent_streams_reasoning_and_steps(monkeypatch):
+    from app.agent.events import ReasoningDelta, StepFinished, StepStarted
+    from app.llm.base import ReasoningChunk
+
+    agent = _agent(monkeypatch, [[ReasoningChunk("Let me think about it."), TextChunk("Done.")]])
+    events = await _drive(agent, _make_input())
+    assert any(isinstance(e, ReasoningDelta) and "think" in e.text for e in events)
+    step_names = {e.name for e in events if isinstance(e, (StepStarted, StepFinished))}
+    assert "Thinking" in step_names
+
+
+@pytest.mark.asyncio
+async def test_translator_maps_reasoning_and_steps():
+    from ag_ui.core import EventType, RunAgentInput, UserMessage
+
+    from app.agent.events import ReasoningDelta, StepFinished, StepStarted, TextDelta
+    from app.agui.translator import Translator
+
+    class FakeAgent:
+        async def run(self, _input):
+            yield StepStarted("Thinking")
+            yield ReasoningDelta("hmm")
+            yield StepFinished("Thinking")
+            yield TextDelta("answer")
+
+    inp = RunAgentInput(
+        thread_id="t", run_id="r", state={},
+        messages=[UserMessage(id="u", role="user", content="hi")],
+        tools=[], context=[], forwarded_props={},
+    )
+    types = [e.type async for e in Translator(input=inp, agent=FakeAgent(), user_id="t").stream()]
+    assert EventType.STEP_STARTED in types and EventType.STEP_FINISHED in types
+    assert EventType.REASONING_MESSAGE_START in types
+    assert EventType.REASONING_MESSAGE_CONTENT in types
+    assert EventType.REASONING_MESSAGE_END in types

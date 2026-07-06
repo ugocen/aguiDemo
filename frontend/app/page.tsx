@@ -27,14 +27,29 @@ export default function WorkspacePage() {
       </aside>
       <div className="main-col">
         <div className="topbar">
-          <span className="topbar-title">
-            AG-UI Workspace, {useCopilot ? "CopilotKit" : "custom"} client
-          </span>
-          {!useCopilot && (
-            <button className="btn" onClick={() => setShowInspector((v) => !v)}>
-              {showInspector ? "Hide events" : `Show events${eventCount ? ` (${eventCount})` : ""}`}
-            </button>
-          )}
+          <div className="brand">
+            <span className="brand-glyph" aria-hidden="true">◈</span>
+            <span className="brand-text">
+              <span className="brand-name">AG-UI Studio</span>
+              <span className="brand-sub">
+                {useCopilot ? "CopilotKit client" : "custom client · streaming over SSE"}
+              </span>
+            </span>
+          </div>
+          <div className="topbar-right">
+            {!useCopilot && (
+              <button className="btn ghost" onClick={() => setShowInspector((v) => !v)}>
+                {showInspector ? "Hide events" : `Events${eventCount ? ` · ${eventCount}` : ""}`}
+              </button>
+            )}
+            <div className="user-chip">
+              <span className="avatar sm">UG</span>
+              <span className="user-meta">
+                <span className="user-name">Ugur Gocen</span>
+                <span className="user-role">Platform Admin</span>
+              </span>
+            </div>
+          </div>
         </div>
         {useCopilot ? (
           <CopilotChatArea />

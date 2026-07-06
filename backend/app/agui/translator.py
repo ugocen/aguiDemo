@@ -7,12 +7,19 @@ from typing import Any
 from ag_ui.core import (
     BaseEvent,
     EventType,
+    ReasoningEndEvent,
+    ReasoningMessageContentEvent,
+    ReasoningMessageEndEvent,
+    ReasoningMessageStartEvent,
+    ReasoningStartEvent,
     RunAgentInput,
     RunErrorEvent,
     RunFinishedEvent,
     RunStartedEvent,
     StateDeltaEvent,
     StateSnapshotEvent,
+    StepFinishedEvent,
+    StepStartedEvent,
     TextMessageContentEvent,
     TextMessageEndEvent,
     TextMessageStartEvent,
@@ -27,6 +34,9 @@ from app.agent.events import (
     ApprovalRequested,
     DocumentDelta,
     DocumentSnapshot,
+    ReasoningDelta,
+    StepFinished,
+    StepStarted,
     TextDelta,
     ToolCallCompleted,
     ToolCallStarted,
@@ -87,6 +97,8 @@ class Translator:
         self._state = initial_state(input)
         self._text_open = False
         self._text_message_id: str | None = None
+        self._reasoning_open = False
+        self._reasoning_message_id: str | None = None
         self.result = RunResult()
 
     def _emit(self, event: BaseEvent) -> BaseEvent:
@@ -124,6 +136,36 @@ class Translator:
         self._text_open = False
         return event
 
+    def _open_reasoning(self) -> list[BaseEvent]:
+        if self._reasoning_open:
+            return []
+        self._reasoning_message_id = f"rsn_{uuid.uuid4().hex[:8]}"
+        self._reasoning_open = True
+        return [
+            self._emit(
+                ReasoningStartEvent(
+                    type=EventType.REASONING_START, message_id=self._reasoning_message_id
+                )
+            ),
+            self._emit(
+                ReasoningMessageStartEvent(
+                    type=EventType.REASONING_MESSAGE_START,
+                    message_id=self._reasoning_message_id,
+                    role="reasoning",
+                )
+            ),
+        ]
+
+    def _close_reasoning(self) -> list[BaseEvent]:
+        if not self._reasoning_open or self._reasoning_message_id is None:
+            return []
+        mid = self._reasoning_message_id
+        self._reasoning_open = False
+        return [
+            self._emit(ReasoningMessageEndEvent(type=EventType.REASONING_MESSAGE_END, message_id=mid)),
+            self._emit(ReasoningEndEvent(type=EventType.REASONING_END, message_id=mid)),
+        ]
+
     async def stream(self) -> AsyncIterator[BaseEvent]:
         run_id = self._input.run_id
         thread_id = self._input.thread_id
@@ -144,7 +186,32 @@ class Translator:
                     break
                 to_send = None
 
-                if isinstance(agent_event, TextDelta):
+                if not isinstance(agent_event, ReasoningDelta):
+                    for ev in self._close_reasoning():
+                        yield ev
+
+                if isinstance(agent_event, ReasoningDelta):
+                    for ev in self._open_reasoning():
+                        yield ev
+                    yield self._emit(
+                        ReasoningMessageContentEvent(
+                            type=EventType.REASONING_MESSAGE_CONTENT,
+                            message_id=self._reasoning_message_id,
+                            delta=agent_event.text,
+                        )
+                    )
+
+                elif isinstance(agent_event, StepStarted):
+                    yield self._emit(
+                        StepStartedEvent(type=EventType.STEP_STARTED, step_name=agent_event.name)
+                    )
+
+                elif isinstance(agent_event, StepFinished):
+                    yield self._emit(
+                        StepFinishedEvent(type=EventType.STEP_FINISHED, step_name=agent_event.name)
+                    )
+
+                elif isinstance(agent_event, TextDelta):
                     opened = self._open_text()
                     if opened is not None:
                         yield opened
@@ -250,6 +317,8 @@ class Translator:
                     )
                     to_send = decision
 
+            for ev in self._close_reasoning():
+                yield ev
             closed = self._close_text()
             if closed is not None:
                 yield closed
@@ -258,6 +327,8 @@ class Translator:
                 RunFinishedEvent(type=EventType.RUN_FINISHED, thread_id=thread_id, run_id=run_id)
             )
         except Exception as exc:  # noqa: BLE001
+            for ev in self._close_reasoning():
+                yield ev
             closed = self._close_text()
             if closed is not None:
                 yield closed

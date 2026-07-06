@@ -14,13 +14,18 @@ class TextChunk:
 
 
 @dataclass
+class ReasoningChunk:
+    text: str
+
+
+@dataclass
 class ToolCallChunk:
     id: str
     name: str
     arguments: dict[str, Any]
 
 
-StreamChunk = TextChunk | ToolCallChunk
+StreamChunk = TextChunk | ReasoningChunk | ToolCallChunk
 
 
 @runtime_checkable

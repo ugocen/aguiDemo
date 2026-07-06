@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { RunAgentInput, newId, runAgent } from "@/lib/agui";
 import { createConversation, fetchConversations } from "@/lib/api";
 import { toolCatalog } from "@/lib/catalog";
-import { useStore } from "@/lib/store";
+import { ReasoningItem, StepsItem, useStore } from "@/lib/store";
 import { ApprovalCard } from "@/components/catalog/ApprovalCard";
 import { ChartCard } from "@/components/catalog/ChartCard";
 import { CitationsCard } from "@/components/catalog/CitationsCard";
@@ -14,6 +14,35 @@ import { FormCard } from "@/components/catalog/FormCard";
 import { SuggestedQuestions } from "@/components/catalog/SuggestedQuestions";
 import { TableCard } from "@/components/catalog/TableCard";
 import { ToolCard } from "@/components/catalog/ToolCard";
+
+function StepsStrip({ item }: { item: StepsItem }) {
+  return (
+    <div className="steps-strip">
+      {item.entries.map((s, i) => (
+        <span key={i} className={`step-chip ${s.status}`}>
+          <span className="step-ic" aria-hidden="true">
+            {s.status === "done" ? "✓" : ""}
+          </span>
+          {s.name}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function ReasoningBlock({ item }: { item: ReasoningItem }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={`reasoning ${open ? "open" : ""}`}>
+      <button className="reasoning-head" onClick={() => setOpen((v) => !v)}>
+        <span className="brain" aria-hidden="true">🧠</span>
+        {item.done ? "Thought it through" : "Thinking…"}
+        <span className="chev" aria-hidden="true">›</span>
+      </button>
+      {open && <div className="reasoning-body">{item.text}</div>}
+    </div>
+  );
+}
 
 export function ChatArea() {
   const items = useStore((s) => s.items);
@@ -77,53 +106,79 @@ export function ChatArea() {
     fetchConversations().then(setConversations).catch(() => undefined);
   }
 
+  const lastUserText = [...items].reverse().find((i) => i.kind === "user");
+
   return (
     <div className="chat-region">
       <div className="messages" ref={scrollRef}>
         {items.length === 0 && (
           <div className="empty-hint">
-            Ask something. Try &quot;explain ag-ui and draft a note then approve&quot; to see all four
-            capabilities.
+            <div className="empty-mark">◈</div>
+            Ask the agent anything. Try{" "}
+            <em>&quot;explain ag-ui, compare the types, then draft a note and approve&quot;</em> to
+            watch reasoning, steps, cards, and a human-in-the-loop, live.
           </div>
         )}
         {items.map((item) => {
           if (item.kind === "user") {
             return (
-              <div key={item.id} className="message-row">
+              <div key={item.id} className="row user">
                 <div className="bubble user">{item.text}</div>
+                <span className="avatar sm">UG</span>
+              </div>
+            );
+          }
+          if (item.kind === "steps") {
+            return (
+              <div key={item.id} className="row ai">
+                <StepsStrip item={item} />
+              </div>
+            );
+          }
+          if (item.kind === "reasoning") {
+            return (
+              <div key={item.id} className="row ai">
+                <ReasoningBlock item={item} />
               </div>
             );
           }
           if (item.kind === "assistant") {
             return (
-              <div key={item.id} className="message-row">
-                <div className="bubble assistant">{item.text}</div>
+              <div key={item.id} className="row ai">
+                <span className="avatar ai-av" aria-hidden="true">✦</span>
+                <div className="ai-col">
+                  <div className="bubble assistant">{item.text}</div>
+                  <div className="msg-actions">
+                    <button
+                      className="msg-act"
+                      onClick={() => navigator.clipboard?.writeText(item.text)}
+                    >
+                      ⧉ Copy
+                    </button>
+                    <button className="msg-act" aria-label="Good response">👍</button>
+                    <button className="msg-act" aria-label="Bad response">👎</button>
+                    <button
+                      className="msg-act"
+                      onClick={() => lastUserText && send(lastUserText.text)}
+                    >
+                      ↻ Regenerate
+                    </button>
+                  </div>
+                </div>
               </div>
             );
           }
-          if (item.kind === "tool") {
-            return <ToolCard key={item.id} item={item} />;
-          }
-          if (item.kind === "approval") {
-            return <ApprovalCard key={item.id} item={item} />;
-          }
-          if (item.kind === "table") {
-            return <TableCard key={item.id} item={item} />;
-          }
-          if (item.kind === "followup") {
-            return <FollowUpCard key={item.id} item={item} />;
-          }
-          if (item.kind === "chart") {
-            return <ChartCard key={item.id} item={item} />;
-          }
-          if (item.kind === "citations") {
-            return <CitationsCard key={item.id} item={item} />;
-          }
+          if (item.kind === "tool") return <ToolCard key={item.id} item={item} />;
+          if (item.kind === "approval") return <ApprovalCard key={item.id} item={item} />;
+          if (item.kind === "table") return <TableCard key={item.id} item={item} />;
+          if (item.kind === "followup") return <FollowUpCard key={item.id} item={item} />;
+          if (item.kind === "chart") return <ChartCard key={item.id} item={item} />;
+          if (item.kind === "citations") return <CitationsCard key={item.id} item={item} />;
           if (item.kind === "form") {
             return <FormCard key={item.id} item={item} onSubmit={(text) => send(text)} />;
           }
           return (
-            <div key={item.id} className="message-row">
+            <div key={item.id} className="row ai">
               <div className="bubble assistant error-banner">{item.message}</div>
             </div>
           );
@@ -133,9 +188,10 @@ export function ChatArea() {
 
       <div className="composer">
         <div className="composer-inner">
+          <button className="composer-clip" aria-label="Attach">⧉</button>
           <textarea
             value={draft}
-            placeholder="Message the agent..."
+            placeholder="Message the agent… ask for a table, a chart, or a draft"
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
@@ -144,9 +200,17 @@ export function ChatArea() {
               }
             }}
           />
-          <button className="btn" disabled={isRunning} onClick={() => send(draft)}>
-            {isRunning ? "..." : "Send"}
+          <button
+            className="composer-send"
+            disabled={isRunning}
+            aria-label="Send"
+            onClick={() => send(draft)}
+          >
+            {isRunning ? "…" : "→"}
           </button>
+        </div>
+        <div className="composer-hint">
+          Streaming typed AG-UI events over SSE · reasoning &amp; steps shown live
         </div>
       </div>
     </div>

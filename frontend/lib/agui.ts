@@ -37,6 +37,7 @@ export interface AguiEvent {
   runId?: string;
   threadId?: string;
   message?: string;
+  stepName?: string;
 }
 
 /**

@@ -505,6 +505,24 @@ one, otherwise tool name + date. Examples:
 
 <!-- NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-07-06T10:30Z — Claude-Code (Opus 4.8, 2026-07-06)
+**Did:** Two big additions. (1) **Reasoning + step events** end to end: added
+`ReasoningDelta`/`StepStarted`/`StepFinished` semantic events + a `ReasoningChunk`
+LLM chunk; the Gemini provider now enables `thinkingConfig.includeThoughts` and
+splits thought parts into reasoning; the translator maps them to protocol
+`REASONING_MESSAGE_*` (role must be `"reasoning"`) and `STEP_*` events (lint
+ignores them, no pairing issue); `LLMToolAgent` emits a "Thinking" step around the
+model stream and a "Looking up"/"Rendering"/"Awaiting approval" step around tool
+handling; the mock agent emits scripted reasoning+steps too. Frontend: store gets
+`reasoning`/`steps` items, ChatArea renders a collapsible thinking block + a step
+chip strip. Verified live against Gemini (real thought tokens streamed) + unit
+tests (18 pass), smoke green. (2) **Agentic redesign** of the custom client
+(new violet palette, `AgentList` icons, `AG-UI Studio` header + user chip, message
+actions, gradient composer) — replaced the old cream/terracotta look. Shell
+verified in a local preview; frontend typecheck/lint/build green.
+**Next:** Redeploying both images to EKS. Then optional: same for scenario agents,
+Entra auth (#9), teardown.
+
 ### 2026-07-06T09:00Z — Claude-Code (Opus 4.8, 2026-07-06)
 **Did:** Dropped RDS to cut cost — the app now runs on **SQLite everywhere**.
 Local: `DATABASE_URL` defaults to `sqlite+aiosqlite:///./agui.db` (no docker

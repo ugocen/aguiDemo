@@ -6,6 +6,9 @@ from app.agent.base import latest_user_text
 from app.agent.events import (
     AgentEvent,
     ApprovalRequested,
+    ReasoningDelta,
+    StepFinished,
+    StepStarted,
     TextDelta,
     ToolCallCompleted,
     ToolCallStarted,
@@ -14,7 +17,7 @@ from app.agent.tools import lookup_knowledge
 from app.agui.catalog import APPROVAL_TOOL, LOOKUP_TOOL, tool_catalog
 from app.agui.resume import ApprovalDecision
 from app.config.settings import Settings
-from app.llm.base import LLMError, TextChunk, ToolCallChunk
+from app.llm.base import LLMError, ReasoningChunk, TextChunk, ToolCallChunk
 from app.llm.factory import build_llm
 
 DEFAULT_SYSTEM = (
@@ -105,6 +108,7 @@ class LLMToolAgent:
             calls: list[ToolCallChunk] = []
             assistant_text = ""
             streamed_any = False
+            yield StepStarted("Thinking")
             try:
                 async for chunk in self._client.stream_chat(messages, tools_enabled):
                     streamed_any = True
@@ -112,11 +116,16 @@ class LLMToolAgent:
                         if chunk.text:
                             assistant_text += chunk.text
                             yield TextDelta(chunk.text)
+                    elif isinstance(chunk, ReasoningChunk):
+                        if chunk.text:
+                            yield ReasoningDelta(chunk.text)
                     elif isinstance(chunk, ToolCallChunk):
                         calls.append(chunk)
             except LLMError as exc:
+                yield StepFinished("Thinking")
                 yield TextDelta(_friendly_error(exc))
                 return
+            yield StepFinished("Thinking")
 
             if not calls:
                 if not streamed_any and _turn == 0:
@@ -133,6 +142,14 @@ class LLMToolAgent:
                 }
             )
 
+            step = (
+                "Looking up"
+                if any(c.name == LOOKUP_TOOL for c in calls)
+                else "Awaiting approval"
+                if any(c.name == APPROVAL_TOOL for c in calls)
+                else "Rendering"
+            )
+            yield StepStarted(step)
             for c in calls:
                 if c.name == LOOKUP_TOOL:
                     yield ToolCallStarted(tool_call_id=c.id, name=c.name, args=c.arguments)
@@ -163,6 +180,8 @@ class LLMToolAgent:
                             "content": {"status": "rendered"},
                         }
                     )
+
+            yield StepFinished(step)
 
             # A render-only turn has nothing more for the model to react to; stop
             # offering tools so the follow-up turn is a text wrap-up, not a repeat
