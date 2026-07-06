@@ -461,7 +461,8 @@ This section is the **canonical copy** of the collaboration protocol; `AGENTS.md
 and `.agents/rules/50-collaboration.md` only point here. The work log is always
 the **final section** of HANDOFF.
 
-**Before starting a task:**
+**Before starting a task:** (do this before **each** task, including a 2nd or 3rd
+task within the same session — not only the first)
 - `git pull` (main), review the incoming changes.
 - Read the **newest entries** of the work log below — what others did and what
   they planned in "Next". Do not restart work someone already claimed there.
@@ -503,6 +504,15 @@ one, otherwise tool name + date. Examples:
 `Antigravity: <workspace/agent> (2026-07-05)`
 
 <!-- NEW ENTRIES BELOW, NEWEST FIRST -->
+
+### 2026-07-06T05:50Z — Claude-Code (Opus 4.8, 2026-07-06)
+**Did:** Hardened the collaboration protocol after feedback that the pre-task
+`git pull` was being skipped on later tasks within a session (the after-task
+log+push was being done). Added a strict, non-skippable enforcement block to
+`CLAUDE.md` (the Claude Code parallel to Antigravity's `.agents/AGENTS.md`) and
+clarified §11 that the pull happens before EACH task, mid-session included. Docs
+only, no code change.
+**Next:** —
 
 ### 2026-07-06T05:35Z — Claude-Code (Opus 4.8, 2026-07-06)
 **Did:** Implemented #7 (LLM tool-calling). Added a vendor-agnostic
