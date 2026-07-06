@@ -504,6 +504,10 @@ one, otherwise tool name + date. Examples:
 
 <!-- NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-07-06T00:46Z — Antigravity (2026-07-06)
+**Did:** Stopped the background instances of the backend (`uvicorn`) and frontend (`npm run dev`) so the user could run them manually in separate terminals to follow logs. Handed over local orchestration to the user.
+**Next:** Stand by for further instructions or complete #7 (LLM tool-calling) if the user provides an API key and requests it.
+
 ### 2026-07-06T00:36Z — Antigravity (2026-07-06)
 **Did:** Fixed the `TypeError: Failed to fetch` error in the Next.js server by creating a symlink from `frontend/.env` to `../.env`. Next.js requires the `.env` file to be in its own working directory to automatically load `NEXT_PUBLIC_*` and `BACKEND_URL` variables. Restarted the frontend development server to pick up the changes.
 **Next:** Stand by for the user's manual validation in the browser.
