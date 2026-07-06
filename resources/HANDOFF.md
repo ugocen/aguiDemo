@@ -504,6 +504,10 @@ one, otherwise tool name + date. Examples:
 
 <!-- NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-07-06T01:00Z — Antigravity (2026-07-06)
+**Did:** Investigated `role "agui" does not exist` causing a 500 error on the backend and failing fetch on the frontend. Discovered that a native Postgres server was running on the Mac at `localhost:5432` which intercepted the backend's DB connection, bypassing the Docker container. Changed `docker-compose.yml` to map the container to `5433:5432` and updated `.env` to connect to `5433`.
+**Next:** User can manually restart the backend and frontend to verify it runs without crashing.
+
 ### 2026-07-06T00:46Z — Antigravity (2026-07-06)
 **Did:** Stopped the background instances of the backend (`uvicorn`) and frontend (`npm run dev`) so the user could run them manually in separate terminals to follow logs. Handed over local orchestration to the user.
 **Next:** Stand by for further instructions or complete #7 (LLM tool-calling) if the user provides an API key and requests it.
