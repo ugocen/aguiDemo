@@ -6,9 +6,40 @@ metadata:
   annotations:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
+    {{- if .Values.ingress.certificateArn }}
+    alb.ingress.kubernetes.io/certificate-arn: {{ .Values.ingress.certificateArn | quote }}
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    {{- end }}
 spec:
   ingressClassName: {{ .Values.ingress.className }}
   rules:
+    {{- if .Values.ingress.apiHost }}
+    # Two-host mode: the frontend and backend get their own domains, so the app
+    # is a normal cross-origin SPA (backend CORS must allow the frontend origin).
+    - host: {{ .Values.ingress.host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-frontend
+                port:
+                  number: 80
+    - host: {{ .Values.ingress.apiHost | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-backend
+                port:
+                  number: 80
+    {{- else }}
+    # Single-host mode: path routing, so the frontend is same-origin with the
+    # backend (host "" matches any host, e.g. the raw ALB DNS name).
     - host: {{ .Values.ingress.host }}
       http:
         paths:
@@ -40,4 +71,5 @@ spec:
                 name: {{ .Release.Name }}-frontend
                 port:
                   number: 80
+    {{- end }}
 {{- end }}

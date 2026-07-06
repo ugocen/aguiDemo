@@ -42,6 +42,18 @@ helm template agui-demo deploy/eks -f deploy/eks/values.yaml   # render only, to
 Access the app at the ALB DNS name (`kubectl get ingress`); `host: ""` in values
 makes the ingress match any host so the ALB DNS works without a custom domain.
 
+### HTTPS + custom domains (two-host)
+
+Request an ACM cert (DNS validation) in the ALB's region for the frontend and
+backend domains, then set in values: `ingress.host: <fe-domain>`,
+`ingress.apiHost: <api-domain>`, `ingress.certificateArn: <acm-arn>`. The ALB
+then serves HTTPS on 443 and redirects HTTP->HTTPS, routing the FE domain to the
+frontend and the API domain to the backend. Point both domains (CNAME) at the ALB
+DNS name. Because FE and BE are now separate origins, build the frontend with
+`--build-arg NEXT_PUBLIC_BACKEND_URL=https://<api-domain>` and set the backend
+`CORS_ALLOW_ORIGINS=https://<fe-domain>` (restart the backend after changing the
+ConfigMap — pods do not reload env automatically).
+
 ## Notes
 
 - `DATABASE_URL` points at RDS PostgreSQL, for example

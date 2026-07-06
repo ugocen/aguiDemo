@@ -11,7 +11,16 @@ frontend:
 ingress:
   enabled: true
   className: alb
-  host: agui-demo.example.com
+  # Single-host mode: leave host "" and apiHost empty to route by path on one host
+  # (works with the raw ALB DNS, same-origin frontend). Two-host mode: set host to
+  # the frontend domain and apiHost to the backend domain (cross-origin — set the
+  # backend CORS_ALLOW_ORIGINS to the frontend origin, and build the frontend with
+  # NEXT_PUBLIC_BACKEND_URL=https://<apiHost>).
+  host: ""
+  apiHost: ""
+  # ACM certificate ARN (same region as the ALB). When set, the ALB gets an HTTPS
+  # listener on 443 and redirects HTTP->HTTPS.
+  certificateArn: ""
 
 env:
   APP_ENV: production

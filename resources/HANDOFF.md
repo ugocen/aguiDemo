@@ -505,6 +505,22 @@ one, otherwise tool name + date. Examples:
 
 <!-- NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-07-06T08:20Z — Claude-Code (Opus 4.8, 2026-07-06)
+**Did:** Added HTTPS + custom domains to the EKS deploy. Requested a DNS-validated
+ACM cert for `aguidemo.testingurl.com.tr` + `api-aguidemo.testingurl.com.tr`
+(DNS is at Metunic — ns1/ns2.metunic.com.tr — records added manually at the
+registrar). Reworked the chart ingress to support **two-host mode** (frontend
+domain -> frontend, API domain -> backend) with the ACM cert on a 443 listener +
+HTTP->HTTPS redirect (`ingress.apiHost` + `ingress.certificateArn` values).
+Because FE and BE are now separate origins, rebuilt the frontend with
+`NEXT_PUBLIC_BACKEND_URL=https://api-aguidemo...` (`:domain` tag) and set backend
+`CORS_ALLOW_ORIGINS=https://aguidemo...` (restart the backend after a ConfigMap
+env change — pods don't reload it automatically). Live + verified: FE 200 with a
+valid cert, API 200, HTTP->HTTPS 301, CORS preflight 200, RDS reachable.
+**Next:** These HTTPS domains can now be Entra SPA redirect URIs — wire Entra
+auth (#9). Also migrated local DB -> RDS and stopped local docker (full cloud).
+Teardown when done to stop billing.
+
 ### 2026-07-06T07:10Z — Claude-Code (Opus 4.8, 2026-07-06)
 **Did:** Deployed #10 to AWS (account 122524101917, us-east-1). AgentCore runtime
 `agui_demo_agent-bfCGIXC6xR` READY (mock). EKS cluster `agui-demo` (2× t3.medium)
