@@ -505,6 +505,16 @@ one, otherwise tool name + date. Examples:
 
 <!-- NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-07-06T05:55Z — Claude-Code (Opus 4.8, 2026-07-06)
+**Did:** Fixed duplicate cards in LLM tool-calling (found via a debug run-log:
+renderTable/Chart/FollowUp/Suggested were each emitted twice). A render-only turn
+fed the model a "rendered" ack, which prompted it to re-emit the same cards on
+the next turn. `LLMToolAgent` now disables tools after a render-only turn, so the
+follow-up turn is a text wrap-up instead of a repeat; lookup/approval turns keep
+tools on so the model can react. Verified live (each card once, lint clean, 2
+Gemini calls instead of 3) and with a regression unit test; 16 tests pass.
+**Next:** —
+
 ### 2026-07-06T05:50Z — Claude-Code (Opus 4.8, 2026-07-06)
 **Did:** Hardened the collaboration protocol after feedback that the pre-task
 `git pull` was being skipped on later tasks within a session (the after-task

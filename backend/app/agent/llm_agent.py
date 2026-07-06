@@ -99,13 +99,14 @@ class LLMToolAgent:
             messages.append({"role": "user", "content": latest_user_text(input) or "Hello"})
 
         tools = self._tools(input)
+        tools_enabled = tools
 
         for _turn in range(self._max_turns):
             calls: list[ToolCallChunk] = []
             assistant_text = ""
             streamed_any = False
             try:
-                async for chunk in self._client.stream_chat(messages, tools):
+                async for chunk in self._client.stream_chat(messages, tools_enabled):
                     streamed_any = True
                     if isinstance(chunk, TextChunk):
                         if chunk.text:
@@ -162,3 +163,9 @@ class LLMToolAgent:
                             "content": {"status": "rendered"},
                         }
                     )
+
+            # A render-only turn has nothing more for the model to react to; stop
+            # offering tools so the follow-up turn is a text wrap-up, not a repeat
+            # of the same cards. Backend/HITL calls keep tools on for a real reply.
+            if not any(c.name in (LOOKUP_TOOL, APPROVAL_TOOL) for c in calls):
+                tools_enabled = None

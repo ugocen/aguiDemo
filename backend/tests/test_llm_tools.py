@@ -197,6 +197,37 @@ async def test_agent_suspends_for_approval(monkeypatch):
     assert any(isinstance(e, TextDelta) and "Escalated" in e.text for e in events)
 
 
+class ToolAwareFakeLLM:
+    """Emits a card whenever tools are offered, text when they are not.
+
+    With the old always-on-tools loop this would re-render the card every turn;
+    the fix disables tools after a render-only turn, so exactly one card appears.
+    """
+
+    async def stream_chat(self, messages, tools=None):
+        if tools:
+            yield ToolCallChunk(id=tool_call_id_stub(), name=TABLE_TOOL, arguments={"columns": [], "rows": []})
+        else:
+            yield TextChunk("Here it is.")
+
+
+_counter = {"n": 0}
+
+
+def tool_call_id_stub():
+    _counter["n"] += 1
+    return f"c{_counter['n']}"
+
+
+@pytest.mark.asyncio
+async def test_render_only_turn_does_not_repeat_cards(monkeypatch):
+    monkeypatch.setattr(llm_agent, "build_llm", lambda settings: ToolAwareFakeLLM())
+    agent = llm_agent.LLMToolAgent(Settings(), max_turns=4)
+    events = await _drive(agent, _make_input())
+    cards = [e for e in events if isinstance(e, ToolCallStarted) and e.name == TABLE_TOOL]
+    assert len(cards) == 1
+
+
 @pytest.mark.asyncio
 async def test_allowed_tools_restrict_catalog(monkeypatch):
     agent = _agent(monkeypatch, [[TextChunk("hi")]], allowed_tools=[CHART_TOOL])
