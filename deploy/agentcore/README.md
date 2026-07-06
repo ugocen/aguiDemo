@@ -13,13 +13,20 @@ The runtime contract is a container that listens on port `8080` and exposes:
 
 ## Build the image
 
-Run from the repository root so both `backend/` and `deploy/` are in context:
+Run from the repository root so both `backend/` and `deploy/` are in context.
+**AgentCore requires an `arm64` image** — build with `--platform linux/arm64`
+(a mismatched arch is rejected at register/update, or the container fails to
+`exec`):
 
 ```bash
-docker build -f deploy/agentcore/Dockerfile -t agui-demo-agent:latest .
+docker build --platform linux/arm64 -f deploy/agentcore/Dockerfile -t agui-demo-agent:latest .
 docker run --rm -p 8080:8080 --env-file .env agui-demo-agent:latest
 curl -s localhost:8080/ping
 ```
+
+Env vars given to `create-agent-runtime`/`update-agent-runtime` are stored as
+plaintext control-plane config, so do **not** put an API key there — deploy in
+`AGENT_MODE=mock` or wire the key via Secrets Manager for `langgraph`.
 
 ## Path A, AgentCore CLI
 

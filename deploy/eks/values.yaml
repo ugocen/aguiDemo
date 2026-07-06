@@ -21,11 +21,9 @@ env:
   CORS_ALLOW_ORIGINS: https://agui-demo.example.com
   NEXT_PUBLIC_AUTH_MODE: entra
 
-secrets:
-  DATABASE_URL: ""
-  MARKETPLACE_BASE_URL: ""
-  MARKETPLACE_API_KEY: ""
-  MARKETPLACE_MODEL: ""
-  ENTRA_TENANT_ID: ""
-  ENTRA_CLIENT_ID: ""
-  ENTRA_AUDIENCE: ""
+# Credentials are managed out-of-band so they never land in Helm values or
+# release history: create the `<release>-secrets` Secret yourself (kubectl create
+# secret / External Secrets) with the keys the app needs — DATABASE_URL,
+# GEMINI_API_KEY (or MARKETPLACE_*), and ENTRA_* when AUTH_MODE=entra. Leaving
+# this empty makes the chart skip the Secret (see templates/config.yaml).
+secrets: {}

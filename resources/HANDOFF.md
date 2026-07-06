@@ -505,6 +505,27 @@ one, otherwise tool name + date. Examples:
 
 <!-- NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-07-06T07:10Z — Claude-Code (Opus 4.8, 2026-07-06)
+**Did:** Deployed #10 to AWS (account 122524101917, us-east-1). AgentCore runtime
+`agui_demo_agent-bfCGIXC6xR` READY (mock). EKS cluster `agui-demo` (2× t3.medium)
+with the AWS Load Balancer Controller; RDS PostgreSQL 18.3 (`agui-demo`, managed
+master password in Secrets Manager) in the cluster VPC; Helm release `agui-demo`
+(langgraph+Gemini, AUTH_MODE=dev) live behind an ALB —
+`http://k8s-default-aguidemo-ad29ee7e34-1192458148.us-east-1.elb.amazonaws.com`
+verified: /agents 200, POST /conversations 201 (persisted to RDS), / 200.
+**Gotchas found:** (1) **Architecture** — EKS nodes are amd64 (build
+backend/frontend `--platform linux/amd64`), but **AgentCore requires arm64**
+(build the agent `--platform linux/arm64`); an arch mismatch crashes pods with
+`exec format error`. (2) `agentcore_app.py` located `backend` via `parents[2]`,
+which is wrong in the container (fixed to search upward). (3) Frontend
+`NEXT_PUBLIC_BACKEND_URL` is build-time — rebuilt same-origin (`""`) so the browser
+reaches the backend through the ALB path routing. (4) Secrets are managed
+out-of-band: the chart's Secret is now conditional and the `agui-demo-secrets`
+Secret is created with `kubectl` (Gemini key + RDS URL never enter Helm values).
+**Next:** Enable the real LLM on AgentCore via Secrets Manager (its env is
+plaintext control-plane config); optional custom domain/TLS on the ALB; teardown
+when done (see below) to stop ~$0.3/hr + RDS billing.
+
 ### 2026-07-06T06:30Z — Claude-Code (Opus 4.8, 2026-07-06)
 **Did:** Per the repo owner, lifted the "never install globally" isolation rule
 and the "never use root" AWS restriction (owner authorized root for

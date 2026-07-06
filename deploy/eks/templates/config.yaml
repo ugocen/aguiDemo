@@ -6,6 +6,7 @@ data:
 {{- range $key, $value := .Values.env }}
   {{ $key }}: {{ $value | quote }}
 {{- end }}
+{{- if .Values.secrets }}
 ---
 apiVersion: v1
 kind: Secret
@@ -15,4 +16,8 @@ type: Opaque
 stringData:
 {{- range $key, $value := .Values.secrets }}
   {{ $key }}: {{ $value | quote }}
+{{- end }}
+{{- else }}
+# Secret {{ .Release.Name }}-secrets is managed out-of-band (e.g. kubectl create
+# secret / External Secrets) so credentials never land in Helm values or history.
 {{- end }}
