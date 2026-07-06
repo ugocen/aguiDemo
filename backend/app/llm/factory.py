@@ -21,3 +21,19 @@ def build_llm(settings: Settings) -> LLMClient:
     if provider == "gemini":
         return GeminiClient(settings)
     return MarketplaceClient(settings)
+
+
+def has_llm_credentials(settings: Settings) -> bool:
+    """True when the selected provider has an API key configured.
+
+    Lets callers fall back to scripted behavior when ``langgraph`` mode is set
+    without a usable key (so the demo and the smoke stay deterministic).
+    """
+    return bool(
+        {
+            "openai": settings.openai_api_key,
+            "anthropic": settings.anthropic_api_key,
+            "gemini": settings.gemini_api_key,
+            "marketplace": settings.marketplace_api_key,
+        }.get(settings.llm_provider)
+    )

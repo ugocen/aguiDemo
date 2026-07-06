@@ -35,7 +35,7 @@ def build_agent(settings: Settings, agent_id: str | None = None):
         try:
             from agents.registry import build_scenario_agent
 
-            scenario = build_scenario_agent(agent_id)
+            scenario = build_scenario_agent(agent_id, settings)
             if scenario is not None:
                 return scenario
         except Exception as exc:  # noqa: BLE001

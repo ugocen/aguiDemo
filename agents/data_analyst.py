@@ -21,6 +21,15 @@ class DataAnalystAgent:
     description = "Presents a metrics table and derived insights"
     mode = "scenario"
 
+    system_prompt = (
+        "You are a data analyst. Present metrics as a renderTable and a "
+        "renderChart of the same numbers, summarize what stands out with "
+        "renderFollowUp, and offer renderSuggestedQuestions. If the user gives no "
+        "figures, invent small, plausible demo numbers. Keep prose to one or two "
+        "sentences."
+    )
+    allowed_tools = [TABLE_TOOL, CHART_TOOL, FOLLOWUP_TOOL, SUGGESTED_QUESTIONS_TOOL]
+
     async def run(self, input: RunAgentInput) -> AsyncIterator[AgentEvent]:
         subject = latest_user_text(input) or "the run"
 

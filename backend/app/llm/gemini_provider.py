@@ -4,7 +4,14 @@ from collections.abc import AsyncIterator
 import httpx
 
 from app.config.settings import Settings
-from app.llm.base import LLMError, split_system
+from app.llm.base import (
+    LLMError,
+    StreamChunk,
+    TextChunk,
+    ToolCallChunk,
+    split_system,
+    tool_call_id,
+)
 from app.logging.setup import get_logger
 
 log = get_logger("llm")
@@ -22,18 +29,21 @@ class GeminiClient:
         self._timeout = settings.llm_timeout_seconds
 
     async def stream_completion(self, messages: list[dict]) -> AsyncIterator[str]:
-        log.info("llm_call", provider=self.provider, model=self._model)
+        async for chunk in self.stream_chat(messages, None):
+            if isinstance(chunk, TextChunk) and chunk.text:
+                yield chunk.text
+
+    async def stream_chat(
+        self, messages: list[dict], tools: list[dict] | None = None
+    ) -> AsyncIterator[StreamChunk]:
+        log.info("llm_call", provider=self.provider, model=self._model, tools=bool(tools))
         system, rest = split_system(messages)
-        contents = [
-            {
-                "role": "model" if m.get("role") == "assistant" else "user",
-                "parts": [{"text": m.get("content", "")}],
-            }
-            for m in rest
-        ]
-        payload: dict = {"contents": contents}
+        payload: dict = {"contents": _to_contents(rest)}
         if system:
             payload["systemInstruction"] = {"parts": [{"text": system}]}
+        if tools:
+            payload["tools"] = [{"functionDeclarations": [_to_declaration(t) for t in tools]}]
+            payload["toolConfig"] = {"functionCallingConfig": {"mode": "AUTO"}}
         url = (
             f"{self._base_url}/v1beta/models/{self._model}:streamGenerateContent"
             f"?alt=sse&key={self._api_key}"
@@ -54,13 +64,60 @@ class GeminiClient:
                         event = json.loads(data)
                     except json.JSONDecodeError:
                         continue
-                    for part in _parts(event):
-                        if part:
-                            yield part
+                    for chunk in _chunks(event):
+                        yield chunk
 
 
-def _parts(event: dict) -> list[str]:
+def _to_declaration(tool: dict) -> dict:
+    decl = {"name": tool["name"], "description": tool.get("description", "")}
+    params = tool.get("parameters")
+    if params and params.get("properties"):
+        decl["parameters"] = params
+    return decl
+
+
+def _to_contents(rest: list[dict]) -> list[dict]:
+    contents: list[dict] = []
+    for m in rest:
+        role = m.get("role")
+        if role == "tool":
+            response = m.get("content")
+            if not isinstance(response, dict):
+                response = {"result": response}
+            contents.append(
+                {
+                    "role": "user",
+                    "parts": [
+                        {"functionResponse": {"name": m.get("name", "tool"), "response": response}}
+                    ],
+                }
+            )
+        elif role == "assistant":
+            parts: list[dict] = []
+            if m.get("content"):
+                parts.append({"text": m["content"]})
+            for tc in m.get("tool_calls", []):
+                parts.append({"functionCall": {"name": tc["name"], "args": tc.get("arguments", {})}})
+            contents.append({"role": "model", "parts": parts or [{"text": ""}]})
+        else:
+            contents.append({"role": "user", "parts": [{"text": m.get("content", "")}]})
+    return contents
+
+
+def _chunks(event: dict) -> list[StreamChunk]:
+    out: list[StreamChunk] = []
     try:
-        return [p.get("text", "") for p in event["candidates"][0]["content"]["parts"]]
+        parts = event["candidates"][0]["content"]["parts"]
     except (KeyError, IndexError, TypeError):
-        return []
+        return out
+    for p in parts:
+        if "functionCall" in p:
+            fc = p["functionCall"]
+            out.append(
+                ToolCallChunk(
+                    id=tool_call_id(), name=fc.get("name", ""), arguments=dict(fc.get("args") or {})
+                )
+            )
+        elif p.get("text"):
+            out.append(TextChunk(p["text"]))
+    return out

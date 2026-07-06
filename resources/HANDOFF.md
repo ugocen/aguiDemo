@@ -504,6 +504,23 @@ one, otherwise tool name + date. Examples:
 
 <!-- NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-07-06T05:35Z — Claude-Code (Opus 4.8, 2026-07-06)
+**Did:** Implemented #7 (LLM tool-calling). Added a vendor-agnostic
+`stream_chat(messages, tools)` to every provider (Gemini / OpenAI-compatible /
+Anthropic) yielding `TextChunk`/`ToolCallChunk`; a new `app/agent/llm_agent.py`
+`LLMToolAgent` runs a bounded tool-use loop so the model decides which card to
+render (render tools → `ToolCallStarted`; `lookupKnowledge` → run + feed back;
+`requestApproval` → HITL via `asend`). `LangGraphAgent` now subclasses it (the
+LangGraph graph plans a rendering hint). In `langgraph` mode with a provider key
+the default agent and the research / data-analyst / support scenarios are
+model-driven; `doc-writer` stays scripted (canvas has no tool), and `mock` mode /
+no key stay scripted so the smoke is deterministic (pinned to mock). Verified
+live against Gemini (model called renderTable+renderChart, and
+lookup+approval+form; lint clean) plus 15 unit tests. Graceful rate-limit
+handling; Gemini free tier is ~5 req/min, so multi-card runs can hit the quota.
+**Next:** Optional `editDocument` tool so doc-writer's canvas is model-driven;
+expose the default LLM agent in the sidebar.
+
 ### 2026-07-06T02:10Z — Claude-Code (Opus 4.8, 2026-07-06)
 **Did:** Selecting a scenario agent in the sidebar now starts a fresh
 conversation (`AgentList` mirrors `HistoryList.startNew`: clear thread + reset

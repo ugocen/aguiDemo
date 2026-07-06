@@ -35,11 +35,15 @@ summarized in `docs/PROJECT_STATUS_AND_ROADMAP.md`.
 
 ## Later (needs credentials or is manual)
 
-- [~] **Real LLM for scenario agents** — the model path is now vendor-agnostic
-      (`LLM_PROVIDER`: marketplace / openai / anthropic / gemini), so `langgraph`
-      mode runs against Claude, OpenAI, or Gemini. Still to do: let the model
-      *decide* which card to render via tool-calling instead of keyword
-      heuristics, and power the scenario agents with it (needs a provider key).
+- [x] **Real LLM tool-calling** — the model now *decides* which card to render
+      via function calling (vendor-agnostic `stream_chat` on every provider →
+      `LLMToolAgent`'s bounded tool-use loop: render cards, `lookupKnowledge`,
+      and HITL `requestApproval`). In `langgraph` mode with a provider key the
+      default agent and the research / data-analyst / support scenarios are
+      model-driven; `doc-writer` stays scripted (the canvas has no tool), and
+      `mock` mode / no key stay scripted so the demo and smoke are deterministic.
+    - [ ] Optional: an `editDocument` tool so the canvas (doc-writer) is
+          model-driven too; expose the default LLM agent in the sidebar.
 - [ ] **Entra sign-in end to end** — MSAL token in `frontend/lib/auth.ts`,
       `AUTH_MODE=entra`, per-user scoping (needs Entra app registration).
 - [ ] **AgentCore deploy** (Phase 2) and **EKS deploy** (Phase 3) — run the

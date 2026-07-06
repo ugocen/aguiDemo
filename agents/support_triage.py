@@ -29,6 +29,14 @@ class SupportTriageAgent:
     description = "Finds an answer and asks approval before escalating"
     mode = "scenario"
 
+    system_prompt = (
+        "You are a support triage agent. First look the issue up with "
+        "lookupKnowledge. Then call requestApproval to ask a human before "
+        "escalating. Offer a renderForm to open a ticket and renderFollowUp with "
+        "resolution steps. Keep prose to one or two sentences."
+    )
+    allowed_tools = [LOOKUP_TOOL, APPROVAL_TOOL, FORM_TOOL, FOLLOWUP_TOOL]
+
     async def run(self, input: RunAgentInput) -> AsyncIterator[AgentEvent]:
         issue = latest_user_text(input) or "the issue"
 

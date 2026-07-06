@@ -32,6 +32,14 @@ class ResearchAssistantAgent:
     description = "Looks a topic up and compares sources in a table"
     mode = "scenario"
 
+    system_prompt = (
+        "You are a research assistant. Look the user's topic up with "
+        "lookupKnowledge, compare how a few sources line up in a renderTable, "
+        "back it with renderCitations, and offer renderSuggestedQuestions for "
+        "going deeper. Keep prose to one or two sentences."
+    )
+    allowed_tools = [LOOKUP_TOOL, TABLE_TOOL, CITATIONS_TOOL, SUGGESTED_QUESTIONS_TOOL]
+
     async def run(self, input: RunAgentInput) -> AsyncIterator[AgentEvent]:
         query = latest_user_text(input) or "AG-UI"
 
