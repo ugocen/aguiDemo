@@ -6,8 +6,11 @@ from ag_ui.encoder import EventEncoder
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 
-BACKEND_ROOT = Path(__file__).resolve().parents[2] / "backend"
-sys.path.insert(0, str(BACKEND_ROOT))
+_here = Path(__file__).resolve()
+for _candidate in (_here.parent, *_here.parents):
+    if (_candidate / "backend" / "app").is_dir():
+        sys.path.insert(0, str(_candidate / "backend"))
+        break
 
 from app.agent.factory import build_agent  # noqa: E402
 from app.agui.translator import Translator  # noqa: E402

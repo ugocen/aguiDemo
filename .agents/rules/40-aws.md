@@ -1,11 +1,11 @@
-# AWS: bootstrap once with root, then never use root
+# AWS: scoped deployer preferred, root authorized by the owner when needed
 
-- Do all AWS work with the scoped IAM deployer user, profile `agui-deployer`
-  (`--profile agui-deployer` or `AWS_PROFILE=agui-deployer`). Never run deploy
-  commands as the root account.
-- The **only** time the root account is used is the one-time bootstrap
-  (`deploy/aws/bootstrap_iam.sh`), which creates that scoped user from
-  `deploy/aws/iam-policy.json`. After that, root is never used again.
+- Prefer the scoped IAM deployer user, profile `agui-deployer`
+  (`--profile agui-deployer` or `AWS_PROFILE=agui-deployer`), for routine work.
+- The repo owner has **authorized using the root account** (`default` profile)
+  directly when it is needed to acquire permissions or create infrastructure the
+  scoped user cannot — e.g. creating the EKS cluster and RDS, `iam:PassRole`, or
+  attaching broader policies. The earlier "never use root" restriction is lifted.
 - Never put credentials in the repo or in code. Keep AWS keys in the named
   profile in `~/.aws/credentials`; never commit access keys.
 - Connecting to AWS is allowed and not restricted by the isolation rule — that

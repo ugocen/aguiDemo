@@ -6,6 +6,16 @@ COPY package.json package-lock.json* ./
 RUN npm install --no-audit --no-fund
 
 COPY . .
+
+# NEXT_PUBLIC_* are inlined at build time. Default to same-origin ("") so the
+# browser calls the ALB, which routes /agui,/conversations,/agents to the backend.
+ARG NEXT_PUBLIC_BACKEND_URL=""
+ARG NEXT_PUBLIC_CLIENT="custom"
+ARG NEXT_PUBLIC_AUTH_MODE="dev"
+ENV NEXT_PUBLIC_BACKEND_URL=$NEXT_PUBLIC_BACKEND_URL \
+    NEXT_PUBLIC_CLIENT=$NEXT_PUBLIC_CLIENT \
+    NEXT_PUBLIC_AUTH_MODE=$NEXT_PUBLIC_AUTH_MODE
+
 RUN npm run build
 
 FROM node:20-slim AS runner

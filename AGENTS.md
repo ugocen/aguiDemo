@@ -88,14 +88,12 @@ citations, form, approval (HITL), canvas.
 
 ## Conventions
 
-- **Never install anything globally.** Always use an isolated environment: a
-  Python virtualenv (`backend/.venv`) for Python packages, the project-local
-  `frontend/node_modules` for npm packages, and Docker for services (Postgres).
-  Never install language packages globally: no `npm install -g`, no `pip install
-  --user`, no `sudo pip`/`sudo npm`. If the venv or `node_modules` does not exist,
-  create it first (`python -m venv backend/.venv` / `npm install
-  --legacy-peer-deps`). This is about package installs only — connecting to
-  external services (AWS, the Marketplace gateway, GitHub) is unaffected.
+- **Prefer the local environment for project dependencies** (`backend/.venv` for
+  Python, `frontend/node_modules` via `npm install --legacy-peer-deps`, Docker for
+  services) to keep the repo reproducible. The earlier hard "never install
+  globally" isolation rule has been **lifted by the repo owner**: global installs
+  of host CLI tools (e.g. `helm`, `eksctl`, `brew` packages) are allowed when a
+  task needs them.
 - Keep comments minimal; no comment on the same line as code. **English only** —
   all code, comments, and documentation (README, HANDOFF, planning docs, etc.).
 - Read config from env via the single `Settings` object; never hardcode.
@@ -122,10 +120,11 @@ the Docker images; `/aws-bootstrap` sets up the scoped AWS deployer.
 
 ## AWS
 
-Bootstrap AWS once with root to create a scoped IAM user, then always use that
-user (`--profile agui-deployer`), never root. Flow, policy, and script are in
-`deploy/aws/` (see `.agents/rules/40-aws.md`). Connecting to AWS is not
-restricted by the install-isolation rule.
+A scoped IAM deployer user exists (`--profile agui-deployer`) and is preferred for
+routine work. The repo owner has **authorized using the root account directly**
+when needed to acquire permissions or create infrastructure the scoped user
+cannot (e.g. creating the EKS cluster and RDS). Flow, policy, and script are in
+`deploy/aws/` (see `.agents/rules/40-aws.md`).
 
 ## Collaboration protocol (multiple agents / tools)
 

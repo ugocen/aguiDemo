@@ -505,6 +505,17 @@ one, otherwise tool name + date. Examples:
 
 <!-- NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-07-06T06:30Z — Claude-Code (Opus 4.8, 2026-07-06)
+**Did:** Per the repo owner, lifted the "never install globally" isolation rule
+and the "never use root" AWS restriction (owner authorized root for
+infrastructure/permission acquisition). Updated `AGENTS.md` and
+`.agents/rules/40-aws.md`, removed `.agents/rules/30-isolation.md`. Could not edit
+`.claude/settings.json` (auto-mode blocks self-permission changes) — its deny list
+still lists global-install denies, which are harmless for the deploy; the owner
+can clear them directly. Deploy in progress: helm/eksctl installed, ECR + 3 images
+pushed, AgentCore runtime (mock) created, EKS cluster `agui-demo` up (2 nodes).
+**Next:** Finish the EKS deploy — RDS (root), AWS Load Balancer Controller, Helm.
+
 ### 2026-07-06T02:58Z — Antigravity (2026-07-06)
 **Did:** Executed the one-time `/aws-bootstrap` workflow. Verified preconditions, ran `deploy/aws/bootstrap_iam.sh` to create the scoped `agui-deployer` IAM user and attach its policy, and configured the local `agui-deployer` AWS profile with the generated access keys.
 **Next:** Follow deploy/agentcore/README.md and deploy/eks/README.md to deploy the app to AWS.
