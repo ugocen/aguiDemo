@@ -1,13 +1,15 @@
-from agents.data_analyst import DataAnalystAgent
-from agents.doc_writer import DocWriterAgent
-from agents.research_assistant import ResearchAssistantAgent
-from agents.support_triage import SupportTriageAgent
+from agents.content_studio import ContentStudioAgent
+from agents.growth_analyst import GrowthAnalystAgent
+from agents.incident_commander import IncidentCommanderAgent
+from agents.research_desk import ResearchDeskAgent
+from agents.trip_architect import TripArchitectAgent
 
 _AGENT_CLASSES = [
-    ResearchAssistantAgent,
-    DocWriterAgent,
-    DataAnalystAgent,
-    SupportTriageAgent,
+    ResearchDeskAgent,
+    TripArchitectAgent,
+    IncidentCommanderAgent,
+    GrowthAnalystAgent,
+    ContentStudioAgent,
 ]
 
 SCENARIO_AGENTS = {cls.id: cls for cls in _AGENT_CLASSES}

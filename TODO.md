@@ -12,8 +12,9 @@ summarized in `docs/PROJECT_STATUS_AND_ROADMAP.md`.
       approval, canvas. Live Event Inspector.
 - [x] Second client: CopilotKit provider + CopilotChat + `useCopilotAction`
       cards, `/api/copilotkit` runtime route (build-verified).
-- [x] Scenario agents in `agents/` (research, doc-writer, data-analyst,
-      support-triage), routed by selected agent id.
+- [x] Scenario agents in `agents/`, each mapped to a canonical AG-UI Dojo
+      feature (research-desk, trip-architect, incident-commander, growth-analyst,
+      content-studio), routed by selected agent id.
 - [x] Cloud assets prepared: AgentCore packaging, EKS Helm chart, Dockerfiles.
 - [x] Docs: README, FINDINGS, PROJECT_STATUS_AND_ROADMAP, sample event log.
 
@@ -39,10 +40,11 @@ summarized in `docs/PROJECT_STATUS_AND_ROADMAP.md`.
       via function calling (vendor-agnostic `stream_chat` on every provider →
       `LLMToolAgent`'s bounded tool-use loop: render cards, `lookupKnowledge`,
       and HITL `requestApproval`). In `langgraph` mode with a provider key the
-      default agent and the research / data-analyst / support scenarios are
-      model-driven; `doc-writer` stays scripted (the canvas has no tool), and
-      `mock` mode / no key stay scripted so the demo and smoke are deterministic.
-    - [ ] Optional: an `editDocument` tool so the canvas (doc-writer) is
+      default agent and the research-desk / trip-architect / incident-commander /
+      growth-analyst scenarios are model-driven; `content-studio` stays scripted
+      (the canvas has no tool), and `mock` mode / no key stay scripted so the demo
+      and smoke are deterministic.
+    - [ ] Optional: an `editDocument` tool so the canvas (content-studio) is
           model-driven too; expose the default LLM agent in the sidebar.
 - [ ] **Entra sign-in end to end** — MSAL token in `frontend/lib/auth.ts`,
       `AUTH_MODE=entra`, per-user scoping (needs Entra app registration).

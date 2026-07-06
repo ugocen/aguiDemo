@@ -117,6 +117,7 @@ button {
 .ic-doc { background: #fbeef6; }
 .ic-data { background: #eaf7f0; }
 .ic-support { background: #fff2e8; }
+.ic-plan { background: #efeafe; }
 
 .agent-meta {
   display: flex;

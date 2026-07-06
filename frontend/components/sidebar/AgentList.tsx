@@ -4,10 +4,11 @@ import { fetchConversations } from "@/lib/api";
 import { useStore } from "@/lib/store";
 
 const ICONS: Record<string, { glyph: string; cls: string }> = {
-  "research-assistant": { glyph: "🔍", cls: "ic-research" },
-  "doc-writer": { glyph: "📝", cls: "ic-doc" },
-  "data-analyst": { glyph: "📊", cls: "ic-data" },
-  "support-triage": { glyph: "🛟", cls: "ic-support" },
+  "research-desk": { glyph: "🔬", cls: "ic-research" },
+  "trip-architect": { glyph: "✈️", cls: "ic-plan" },
+  "incident-commander": { glyph: "🚨", cls: "ic-support" },
+  "growth-analyst": { glyph: "📈", cls: "ic-data" },
+  "content-studio": { glyph: "✍️", cls: "ic-doc" },
 };
 
 export function AgentList() {

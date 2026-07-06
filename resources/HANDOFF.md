@@ -505,6 +505,35 @@ one, otherwise tool name + date. Examples:
 
 <!-- NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-07-06T23:41Z — Claude-Code (Opus 4.8, 2026-07-07)
+**Did:** Two things at the user's request. (1) **Full AWS teardown** — the user
+asked to shut everything down to stop the ~$200/mo burn. `helm uninstall`
+(dropped the ALB) → deleted our AgentCore runtime `agui_demo_agent` → `eksctl
+delete cluster` (nodegroup, NAT, VPC, IRSA stacks). Verified zero: no EKS
+cluster, 0 ALBs, no NAT gateways, EBS/PVC gone, no RDS. **Kept** (free/cheap, so
+redeploy stays fast): the ISSUED ACM cert `aguidemo.testingurl.com.tr` and the 3
+ECR repos. NB: six `agentN…A2A` AgentCore runtimes + `agentcore-demo-test1`
+subnet group are a **different user project** — left untouched. On redeploy the
+only manual step is repointing the 2 Metunic CNAMEs at the new ALB (cert/DNS
+validation is already done). (2) **New scenario-agent roster** — the user
+disliked the old four; replaced them with five agents each mapped to a canonical
+[AG-UI Dojo](https://dojo.ag-ui.com/) feature (per the AgentCore AG-UI guide +
+ag-ui repo): `research-desk` (agentic chat + reasoning), `trip-architect`
+(subgraphs supervisor + HITL: form/table/chart/approval), `incident-commander`
+(agentic generative UI live steps + HITL rollback), `growth-analyst` (tool-based
+generative UI), `content-studio` (predictive state updates / canvas, scripted-
+only since the canvas has no tool). Authored in parallel via a Workflow (5
+agents, each self-syntax-checked + checklist-reviewed), then wired up: rewrote
+`agents/registry.py`, deleted the four old files, updated `AgentList.tsx` icons
+(+ new `.ic-plan` CSS), `smoke_e2e.py` expected ids + run-log id, and the README
+tables. Each has a `system_prompt`+`allowed_tools` (model-driven in langgraph
+mode) and a scripted `run` that also emits reasoning + step events for mock/smoke.
+**Verified:** backend `pytest -q` 18 passed; `smoke_e2e.py` SMOKE OK (all 5 new
+agents lint-clean incl. HITL, catalog parity 8 tools); frontend
+`typecheck`/`lint`/`build` all clean.
+**Next:** Optional — redeploy via a teardown/deploy script pair; Entra auth (#9);
+browser-verify the new sidebar live (`/run`).
+
 ### 2026-07-06T11:10Z — Claude-Code (Opus 4.8, 2026-07-06)
 **Did:** Deployed the reasoning/step + redesign work to EKS and verified live.
 Added `imagePullPolicy: Always` to the backend/frontend deployments (the `:domain`

@@ -240,15 +240,18 @@ add a component.
 
 ## Scenario agents
 
-`agents/` is a separate package of scenario-specific agents. Each is a scripted
-agent (no credentials needed) showcasing a distinct mix of card types:
+`agents/` is a separate package of scenario-specific agents. Each maps to a
+canonical [AG-UI Dojo](https://dojo.ag-ui.com/) feature and showcases a distinct
+mix of card types (model-driven in `langgraph` mode with a provider key, with a
+scripted fallback so the demo runs without credentials):
 
-| Agent id | Focus | Card types |
+| Agent id | AG-UI feature | Card types |
 | --- | --- | --- |
-| `research-assistant` | Look a topic up, compare sources | text, lookup, table, suggestions |
-| `doc-writer` | Draft on the canvas, ask to finalize | text, canvas, follow-up, approval |
-| `data-analyst` | Metrics table and insights | text, table, follow-up, suggestions |
-| `support-triage` | Find an answer, escalate on approval | text, lookup, approval, follow-up |
+| `research-desk` | agentic chat + reasoning | reasoning, lookup, table, citations, suggestions |
+| `trip-architect` | subgraphs + HITL | reasoning, steps, form, table, chart, approval, follow-up |
+| `incident-commander` | agentic generative UI (live steps) + HITL | reasoning, steps, lookup, table, chart, approval |
+| `growth-analyst` | tool-based generative UI | reasoning, table, chart, follow-up, suggestions |
+| `content-studio` | predictive state updates (canvas) | reasoning, canvas, follow-up, approval |
 
 They appear in the sidebar; the frontend sends the selected id in
 `RunAgentInput.forwardedProps`, and `app/agent/factory.py` routes to the agent.

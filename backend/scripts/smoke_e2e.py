@@ -103,7 +103,13 @@ async def main() -> None:
             check(health.status_code == 200, "GET /health")
             agents = await c.get("/agents")
             ids = [a["id"] for a in agents.json()]
-            expected = ["research-assistant", "doc-writer", "data-analyst", "support-triage"]
+            expected = [
+                "research-desk",
+                "trip-architect",
+                "incident-commander",
+                "growth-analyst",
+                "content-studio",
+            ]
             check(ids == expected, f"GET /agents = {expected}")
 
             print("scenario streams:")
@@ -116,7 +122,7 @@ async def main() -> None:
                     print("    problems:", problems)
 
             print("run log:")
-            log = await c.get("/agui/runs/data-analyst/log")
+            log = await c.get("/agui/runs/growth-analyst/log")
             captured = log.json()["events"]
             check(len(captured) > 0 and not lint_event_stream(captured), "run-log lints clean")
 
