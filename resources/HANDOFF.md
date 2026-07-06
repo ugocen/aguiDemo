@@ -505,6 +505,20 @@ one, otherwise tool name + date. Examples:
 
 <!-- NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-07-06T11:10Z — Claude-Code (Opus 4.8, 2026-07-06)
+**Did:** Deployed the reasoning/step + redesign work to EKS and verified live.
+Added `imagePullPolicy: Always` to the backend/frontend deployments (the `:domain`
+frontend tag was overwritten in place, so a plain rollout would keep the cached
+image). Rebuilt both images (amd64), `helm upgrade` + rollout. Verified on
+https://aguidemo.testingurl.com.tr: the redesigned `AG-UI Studio` shell is served,
+and a live data-analyst run streams REASONING_MESSAGE_* + STEP_STARTED/FINISHED
+(real Gemini thinking) alongside the tool cards. Note: the AWS **default/root
+session is temporary and expired mid-task** — reauth was needed for kubectl
+(agui-deployer is not in the cluster's RBAC; it can push to ECR but not
+`kubectl`). App is full-cloud: HTTPS custom domains, SQLite-on-EBS, no RDS.
+**Next:** Optional — Entra auth (#9), same reasoning/steps for the scripted
+scenario agents, teardown when done.
+
 ### 2026-07-06T10:30Z — Claude-Code (Opus 4.8, 2026-07-06)
 **Did:** Two big additions. (1) **Reasoning + step events** end to end: added
 `ReasoningDelta`/`StepStarted`/`StepFinished` semantic events + a `ReasoningChunk`

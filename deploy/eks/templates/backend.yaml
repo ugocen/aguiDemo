@@ -24,6 +24,7 @@ spec:
       containers:
         - name: backend
           image: {{ .Values.backend.image }}
+          imagePullPolicy: Always
           ports:
             - containerPort: {{ .Values.backend.port }}
           envFrom:
