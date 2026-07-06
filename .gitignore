@@ -51,3 +51,6 @@ Thumbs.db
 # Antigravity local state (workspace rules/workflows are committed)
 .agents/**/*.local.md
 .antigravity/
+
+# local SQLite databases
+*.db

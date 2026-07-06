@@ -57,7 +57,12 @@ ConfigMap — pods do not reload env automatically).
 ## Notes
 
 - `DATABASE_URL` points at RDS PostgreSQL, for example
-  `postgresql+asyncpg://user:pass@your-rds-host:5432/agui`.
+  `postgresql+asyncpg://user:pass@your-rds-host:5432/agui`. To skip RDS entirely
+  (cheaper, demo-grade), use **SQLite on a volume**: set
+  `backend.persistence.enabled: true`, `backend.replicas: 1`, and
+  `env.DATABASE_URL=sqlite+aiosqlite:////data/agui.db`. That needs the EBS CSI
+  driver addon and a default StorageClass; the chart mounts an EBS PVC at `/data`
+  and uses a `Recreate` strategy (SQLite is single-writer).
 - The ALB ingress routes `/agui`, `/conversations`, and `/agents` to the
   backend and everything else to the frontend, so SSE streams reach FastAPI
   directly. Confirm the load balancer does not buffer `text/event-stream`.

@@ -505,6 +505,21 @@ one, otherwise tool name + date. Examples:
 
 <!-- NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-07-06T09:00Z — Claude-Code (Opus 4.8, 2026-07-06)
+**Did:** Dropped RDS to cut cost — the app now runs on **SQLite everywhere**.
+Local: `DATABASE_URL` defaults to `sqlite+aiosqlite:///./agui.db` (no docker
+needed). Cloud: added a SQLite-on-a-volume mode to the chart
+(`backend.persistence.enabled` -> an EBS PVC at `/data`, `replicas: 1`, `Recreate`
+strategy, `DATABASE_URL=sqlite+aiosqlite:////data/agui.db`); installed the
+`aws-ebs-csi-driver` addon + a gp3 default StorageClass. **Moved `aiosqlite` from
+dev to main deps** (it's a runtime driver now — the container crashed with
+`ModuleNotFoundError` until then) and rebuilt the backend image. Deleted the RDS
+instance + subnet group + SG (data was test-only). Verified: SQLite backend
+`db_ready` + POST /conversations 201 (persists on the PVC), 16 unit tests + smoke
+green. Trade-off: single backend replica (SQLite is single-writer).
+**Next:** Wire Entra (#9) using the HTTPS domains; deep-compare with the official
+`ag-ui` repo; teardown when done.
+
 ### 2026-07-06T08:20Z — Claude-Code (Opus 4.8, 2026-07-06)
 **Did:** Added HTTPS + custom domains to the EKS deploy. Requested a DNS-validated
 ACM cert for `aguidemo.testingurl.com.tr` + `api-aguidemo.testingurl.com.tr`

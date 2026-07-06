@@ -2,6 +2,12 @@ backend:
   image: REPLACE_ME/agui-demo-backend:latest
   replicas: 2
   port: 8000
+  # SQLite-on-a-volume mode (no RDS): set replicas: 1, persistence.enabled: true,
+  # and env.DATABASE_URL=sqlite+aiosqlite:////data/agui.db. Needs the EBS CSI
+  # driver + a default StorageClass. Single-writer, so keep replicas at 1.
+  persistence:
+    enabled: false
+    size: 5Gi
 
 frontend:
   image: REPLACE_ME/agui-demo-frontend:latest

@@ -6,6 +6,13 @@ metadata:
     app: {{ .Release.Name }}-backend
 spec:
   replicas: {{ .Values.backend.replicas }}
+  {{- if .Values.backend.persistence.enabled }}
+  # A ReadWriteOnce volume attaches to one node, so recreate (not rolling) to
+  # avoid the new pod deadlocking on the volume the old pod still holds. Use with
+  # replicas: 1 (SQLite is single-writer).
+  strategy:
+    type: Recreate
+  {{- end }}
   selector:
     matchLabels:
       app: {{ .Release.Name }}-backend
@@ -24,12 +31,23 @@ spec:
                 name: {{ .Release.Name }}-config
             - secretRef:
                 name: {{ .Release.Name }}-secrets
+          {{- if .Values.backend.persistence.enabled }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          {{- end }}
           readinessProbe:
             httpGet:
               path: /health
               port: {{ .Values.backend.port }}
             initialDelaySeconds: 5
             periodSeconds: 10
+      {{- if .Values.backend.persistence.enabled }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-backend-data
+      {{- end }}
 ---
 apiVersion: v1
 kind: Service
@@ -41,3 +59,16 @@ spec:
   ports:
     - port: 80
       targetPort: {{ .Values.backend.port }}
+{{- if .Values.backend.persistence.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-backend-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.backend.persistence.size | default "5Gi" }}
+{{- end }}
