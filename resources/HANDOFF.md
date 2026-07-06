@@ -504,6 +504,10 @@ one, otherwise tool name + date. Examples:
 
 <!-- NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-07-06T00:26Z — Antigravity (2026-07-06)
+**Did:** Created project-scoped rules in `.agents/AGENTS.md` to strictly enforce the collaboration protocol (`git pull` at start, logging in `HANDOFF.md`, and `git push` at the end).
+**Next:** Ensure strict adherence to the logging rule for all future turns.
+
 ### 2026-07-06T00:15Z — Antigravity (2026-07-06)
 **Did:** Checked prerequisites and verified the environment. User initialized the `.env` file and updated the repository. Built production Docker images (`agui-demo-backend`, `agui-demo-frontend`, `agui-demo-agent`). Spun up the stack locally (Postgres, Uvicorn, Next.js) and ran `/verify` and `/smoke` tests (all green). Addressed Next.js `ECONNREFUSED` / `Failed to fetch` error by changing `localhost` to `127.0.0.1` in `.env` to prevent Node.js IPv6 resolution mismatches.
 **Next:** Confirm the frontend properly connects to the backend in the browser.
