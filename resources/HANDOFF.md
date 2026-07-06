@@ -505,6 +505,10 @@ one, otherwise tool name + date. Examples:
 
 <!-- NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-07-06T02:58Z — Antigravity (2026-07-06)
+**Did:** Executed the one-time `/aws-bootstrap` workflow. Verified preconditions, ran `deploy/aws/bootstrap_iam.sh` to create the scoped `agui-deployer` IAM user and attach its policy, and configured the local `agui-deployer` AWS profile with the generated access keys.
+**Next:** Follow deploy/agentcore/README.md and deploy/eks/README.md to deploy the app to AWS.
+
 ### 2026-07-06T05:55Z — Claude-Code (Opus 4.8, 2026-07-06)
 **Did:** Fixed duplicate cards in LLM tool-calling (found via a debug run-log:
 renderTable/Chart/FollowUp/Suggested were each emitted twice). A render-only turn
