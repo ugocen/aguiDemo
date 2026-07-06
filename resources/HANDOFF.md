@@ -504,6 +504,18 @@ one, otherwise tool name + date. Examples:
 
 <!-- NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-07-06T01:55Z — Claude-Code (Opus 4.8, 2026-07-06)
+**Did:** Fixed the frontend `lib/api.ts` "Failed to fetch" (CORS): the browser
+origin `http://127.0.0.1:3000` was not in the allowlist — added it to
+`CORS_ALLOW_ORIGINS` (settings default + `.env`/`.env.example`). Also fixed a
+latent setup bug: the backend never read the repo-root `.env` because `env_file`
+was cwd-relative and the backend runs from `backend/`, so `AGENT_MODE=langgraph`,
+`LLM_PROVIDER=gemini`, and `DATABASE_URL` (port 5433) were silently inactive
+(backend ran on mock/dev/5432 defaults). Pinned `env_file` to the repo-root `.env`
+(absolute path) so config actually applies; pinned the smoke to `AGENT_MODE=mock`
+to keep it hermetic. Verified: pytest 8, smoke OK, frontend typecheck/lint/build.
+**Next:** —
+
 ### 2026-07-06T01:00Z — Antigravity (2026-07-06)
 **Did:** Investigated `role "agui" does not exist` causing a 500 error on the backend and failing fetch on the frontend. Discovered that a native Postgres server was running on the Mac at `localhost:5432` which intercepted the backend's DB connection, bypassing the Docker container. Changed `docker-compose.yml` to map the container to `5433:5432` and updated `.env` to connect to `5433`.
 **Next:** User can manually restart the backend and frontend to verify it runs without crashing.
