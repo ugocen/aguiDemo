@@ -109,6 +109,9 @@ async def main() -> None:
                 "incident-commander",
                 "growth-analyst",
                 "content-studio",
+                "travel-concierge",
+                "platform-architect",
+                "math-coach",
             ]
             check(ids == expected, f"GET /agents = {expected}")
 

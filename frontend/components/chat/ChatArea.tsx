@@ -9,8 +9,12 @@ import { ReasoningItem, StepsItem, useStore } from "@/lib/store";
 import { ApprovalCard } from "@/components/catalog/ApprovalCard";
 import { ChartCard } from "@/components/catalog/ChartCard";
 import { CitationsCard } from "@/components/catalog/CitationsCard";
+import { CommandOutputCard } from "@/components/catalog/CommandOutputCard";
+import { DatePickerCard } from "@/components/catalog/DatePickerCard";
 import { FollowUpCard } from "@/components/catalog/FollowUpCard";
 import { FormCard } from "@/components/catalog/FormCard";
+import { HotelsCard } from "@/components/catalog/HotelsCard";
+import { QuizCard } from "@/components/catalog/QuizCard";
 import { SuggestedQuestions } from "@/components/catalog/SuggestedQuestions";
 import { TableCard } from "@/components/catalog/TableCard";
 import { ToolCard } from "@/components/catalog/ToolCard";
@@ -90,7 +94,7 @@ export function ChatArea() {
     const input: RunAgentInput = {
       threadId: tid,
       runId: newId("run"),
-      state: { document: doc },
+      state: useStore.getState().sharedState,
       messages: [...history, { id: newId("u"), role: "user", content: trimmed }],
       tools: toolCatalog(),
       context: [],
@@ -176,6 +180,16 @@ export function ChatArea() {
           if (item.kind === "citations") return <CitationsCard key={item.id} item={item} />;
           if (item.kind === "form") {
             return <FormCard key={item.id} item={item} onSubmit={(text) => send(text)} />;
+          }
+          if (item.kind === "hotels") {
+            return <HotelsCard key={item.id} item={item} onAction={(text) => send(text)} />;
+          }
+          if (item.kind === "datepicker") {
+            return <DatePickerCard key={item.id} item={item} onAction={(text) => send(text)} />;
+          }
+          if (item.kind === "commandOutput") return <CommandOutputCard key={item.id} item={item} />;
+          if (item.kind === "quiz") {
+            return <QuizCard key={item.id} item={item} onAction={(text) => send(text)} />;
           }
           return (
             <div key={item.id} className="row ai">

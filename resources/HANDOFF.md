@@ -505,6 +505,33 @@ one, otherwise tool name + date. Examples:
 
 <!-- NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-07-07T00:12Z — Claude-Code (Opus 4.8, 2026-07-07)
+**Did:** Added three domain scenarios from the user's spec, at full fidelity —
+real bidirectional **Shared State** + new interactive card types (not
+approximations). New agents: `travel-concierge` (Turkey OTA: `renderHotels`
+clickable cards + `renderDatePicker` + a live booking cart, TURSAB filter table,
+HITL book), `platform-architect` (air-gapped DevOps: `renderCommandOutput`
+terminal card for terraform plan/apply + an AsciiDoc Docs-as-Code canvas + HITL
+apply), `math-coach` (adaptive `renderQuiz` whose difficulty rises with the shared
+score). **Shared State**: added generic `StateSnapshot`/`StateDelta` semantic
+events (translator maps them to `STATE_SNAPSHOT`/`STATE_DELTA`, reusing the same
+`_apply_patch` as the canvas but for arbitrary keys like `/cart`, `/quiz`); the
+frontend store now holds a generic `sharedState`, derives `doc` from it, exposes
+`patchSharedState`, and the run body sends `sharedState` back in
+`RunAgentInput.state` — so UI selections round-trip into the agent. Four new
+catalog tools in both `catalog.py`/`catalog.ts` (parity), four new React cards +
+CopilotKit renders + CSS, and a `SharedStatePanel` that shows the live cart /
+training progress. Roster is now 8 agents. Agents authored in parallel via a
+Workflow; frontend contracts + store + wiring done centrally.
+**Verified:** backend `pytest -q` 18 passed; `smoke_e2e.py` SMOKE OK (all 8 agents
+lint-clean, catalog parity **12 tools**); frontend `typecheck`/`lint`/`build`
+clean. **Browser-verified live** (mock backend + preview): the quiz adaptive loop
+(answer → score/level bump 1→2), the OTA cart (select hotel → Total 26000 TRY),
+and the DevOps terminal + AsciiDoc canvas all render and round-trip correctly.
+**Next:** optional — persist interactive-card done-state across reloads; guard
+against orphaned suspended runs when switching agents mid-HITL; CopilotKit-mode
+shared-state via `useCoAgent`.
+
 ### 2026-07-06T23:41Z — Claude-Code (Opus 4.8, 2026-07-07)
 **Did:** Two things at the user's request. (1) **Full AWS teardown** — the user
 asked to shut everything down to stop the ~$200/mo burn. `helm uninstall`

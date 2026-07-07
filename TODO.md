@@ -15,6 +15,12 @@ summarized in `docs/PROJECT_STATUS_AND_ROADMAP.md`.
 - [x] Scenario agents in `agents/`, each mapped to a canonical AG-UI Dojo
       feature (research-desk, trip-architect, incident-commander, growth-analyst,
       content-studio), routed by selected agent id.
+- [x] Domain scenarios with new card types and bidirectional **Shared State**:
+      travel-concierge (OTA: hotels + date picker + booking cart), platform-architect
+      (air-gapped DevOps: command output + AsciiDoc Docs-as-Code canvas), math-coach
+      (adaptive mental-math quiz). Adds `renderHotels`/`renderDatePicker`/
+      `renderCommandOutput`/`renderQuiz` and a `sharedState` channel that round-trips
+      UI selections back to the agent (`StateDelta` + `RunAgentInput.state`).
 - [x] Cloud assets prepared: AgentCore packaging, EKS Helm chart, Dockerfiles.
 - [x] Docs: README, FINDINGS, PROJECT_STATUS_AND_ROADMAP, sample event log.
 

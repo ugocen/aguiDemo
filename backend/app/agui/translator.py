@@ -35,6 +35,8 @@ from app.agent.events import (
     DocumentDelta,
     DocumentSnapshot,
     ReasoningDelta,
+    StateDelta,
+    StateSnapshot,
     StepFinished,
     StepStarted,
     TextDelta,
@@ -272,6 +274,18 @@ class Translator:
                     )
 
                 elif isinstance(agent_event, DocumentDelta):
+                    _apply_patch(self._state, agent_event.patch)
+                    yield self._emit(
+                        StateDeltaEvent(type=EventType.STATE_DELTA, delta=agent_event.patch)
+                    )
+
+                elif isinstance(agent_event, StateSnapshot):
+                    self._state.update(agent_event.state)
+                    yield self._emit(
+                        StateSnapshotEvent(type=EventType.STATE_SNAPSHOT, snapshot=self._state)
+                    )
+
+                elif isinstance(agent_event, StateDelta):
                     _apply_patch(self._state, agent_event.patch)
                     yield self._emit(
                         StateDeltaEvent(type=EventType.STATE_DELTA, delta=agent_event.patch)

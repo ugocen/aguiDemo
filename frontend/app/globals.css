@@ -118,6 +118,9 @@ button {
 .ic-data { background: #eaf7f0; }
 .ic-support { background: #fff2e8; }
 .ic-plan { background: #efeafe; }
+.ic-travel { background: #e6f6f6; }
+.ic-ops { background: #eceef3; }
+.ic-math { background: #fdf3e3; }
 
 .agent-meta {
   display: flex;
@@ -985,6 +988,321 @@ button {
 
 .inspector-row .inspector-type {
   color: inherit;
+}
+
+/* Hotels card (renderHotels) */
+.hotel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.hotel-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--bg);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.hotel-card.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(122, 92, 255, 0.18);
+}
+.hotel-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.hotel-name {
+  font-weight: 600;
+}
+.hotel-rating {
+  color: #d9820a;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.hotel-area {
+  color: var(--muted);
+  font-size: 13px;
+}
+.hotel-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.hotel-tag {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--think);
+  color: var(--muted);
+}
+.hotel-tag.sea {
+  background: #e6f3fb;
+  color: #1f7aa8;
+}
+.hotel-tag.tursab {
+  background: #eafaf1;
+  color: var(--ok);
+}
+.hotel-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 6px;
+}
+.hotel-price {
+  font-weight: 600;
+}
+.hotel-per {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 12px;
+}
+.hotel-select {
+  padding: 5px 12px;
+  font-size: 13px;
+}
+
+/* Date picker card (renderDatePicker) */
+.datepick-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.datepick-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 140px;
+}
+.datepick-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+.datepick-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+.datepick-nights {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Command output card (renderCommandOutput) */
+.terminal {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #23242e;
+  background: #14151b;
+}
+.terminal-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #1d1e26;
+  border-bottom: 1px solid #262733;
+}
+.terminal-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.terminal-dot.r { background: #ff5f57; }
+.terminal-dot.y { background: #febc2e; }
+.terminal-dot.g { background: #28c840; }
+.terminal-cmd {
+  margin-left: 8px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12.5px;
+  color: #b6b8c6;
+}
+.terminal-body {
+  margin: 0;
+  padding: 12px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: #d5d7e2;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+}
+.term-line.err {
+  color: #ff8a8a;
+}
+.terminal-exit {
+  padding: 6px 12px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  border-top: 1px solid #262733;
+}
+.terminal-exit.ok { color: #4ee08a; }
+.terminal-exit.bad { color: #ff8a8a; }
+
+/* Quiz card (renderQuiz) */
+.quiz-card {
+  background: linear-gradient(180deg, #fbfaff 0%, var(--surface) 60%);
+}
+.quiz-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.quiz-level {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  background: #efeafe;
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+.quiz-count {
+  font-size: 12px;
+  color: var(--muted);
+}
+.quiz-prompt {
+  font-size: 26px;
+  font-weight: 700;
+  text-align: center;
+  padding: 10px 0 14px;
+  letter-spacing: 0.5px;
+}
+.quiz-choices {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.quiz-choice {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.quiz-choice:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.quiz-choice:disabled {
+  cursor: default;
+}
+.quiz-choice.right {
+  border-color: var(--ok);
+  background: #eafaf1;
+  color: var(--ok);
+}
+.quiz-choice.wrong {
+  border-color: #e5484d;
+  background: #fdecec;
+  color: #c0343a;
+}
+.quiz-free {
+  display: flex;
+  gap: 8px;
+}
+.quiz-free .form-input {
+  flex: 1;
+}
+.quiz-result {
+  margin-top: 12px;
+  text-align: center;
+  font-weight: 600;
+}
+.quiz-result.right { color: var(--ok); }
+.quiz-result.wrong { color: #c0343a; }
+
+/* Shared-state panel (bidirectional cart / training state) */
+.sharedstate-panel {
+  max-width: 800px;
+  margin: 0 auto 18px auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+.sharedstate-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.sharedstate-title {
+  font-weight: 600;
+}
+.sharedstate-sub {
+  font-size: 12px;
+  color: var(--accent);
+}
+.sharedstate-block + .sharedstate-block {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.sharedstate-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.sharedstate-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sharedstate-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+.sharedstate-k {
+  color: var(--muted);
+}
+.sharedstate-v {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.sharedstate-v.strong {
+  font-weight: 700;
+}
+.sharedstate-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.sharedstate-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 6px;
+  background: var(--think);
+  border-radius: 10px;
+}
+.sharedstate-n {
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.sharedstate-sl {
+  font-size: 11px;
+  color: var(--muted);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -16,6 +16,9 @@ always scripted (the canvas has no tool).
 | `incident-commander` | `IncidentCommanderAgent` | agentic generative UI (live steps) + HITL | reasoning, steps, lookup, table, chart, approval, follow-up |
 | `growth-analyst` | `GrowthAnalystAgent` | tool-based generative UI | reasoning, table, chart, follow-up, suggested questions |
 | `content-studio` | `ContentStudioAgent` | predictive state updates (canvas) | reasoning, canvas edits, follow-up, approval (HITL) |
+| `travel-concierge` | `TravelConciergeAgent` | tool-based generative UI + shared state | reasoning, hotels, date picker, table, approval, cart shared-state, suggested questions |
+| `platform-architect` | `PlatformArchitectAgent` | backend tool rendering + Docs-as-Code (canvas) | reasoning, steps, lookup, command output, table, approval, canvas, follow-up |
+| `math-coach` | `MathCoachAgent` | agentic generative UI + shared state | reasoning, quiz, chart, follow-up, suggested questions, adaptive shared-state |
 
 ## How they are wired
 

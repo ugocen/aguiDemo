@@ -6,6 +6,10 @@ export const FOLLOWUP_TOOL = "renderFollowUp";
 export const CHART_TOOL = "renderChart";
 export const CITATIONS_TOOL = "renderCitations";
 export const FORM_TOOL = "renderForm";
+export const HOTELS_TOOL = "renderHotels";
+export const DATE_PICKER_TOOL = "renderDatePicker";
+export const COMMAND_OUTPUT_TOOL = "renderCommandOutput";
+export const QUIZ_TOOL = "renderQuiz";
 
 export interface ToolSchema {
   name: string;
@@ -159,6 +163,97 @@ export function toolCatalog(): ToolSchema[] {
           },
         },
         required: ["fields"],
+      },
+    },
+    {
+      name: HOTELS_TOOL,
+      description:
+        "Render clickable hotel result cards the user can select; selecting updates the cart.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Results heading." },
+          hotels: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                id: { type: "string" },
+                name: { type: "string" },
+                area: { type: "string", description: "District or area." },
+                rating: { type: "number", description: "Star rating 0-5." },
+                pricePerNight: { type: "number" },
+                currency: { type: "string", description: "e.g. TRY, EUR." },
+                seaside: { type: "boolean", description: "On the seafront." },
+                tursabApproved: { type: "boolean", description: "Holds a valid TURSAB licence." },
+                tags: { type: "array", items: { type: "string" } },
+              },
+              required: ["name", "area", "pricePerNight"],
+            },
+            description: "Hotels to offer.",
+          },
+        },
+        required: ["hotels"],
+      },
+    },
+    {
+      name: DATE_PICKER_TOOL,
+      description: "Render a check-in/check-out date picker; confirming updates the cart.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Picker heading." },
+          nights: { type: "number", description: "Suggested number of nights." },
+          checkIn: { type: "string", description: "Default check-in (YYYY-MM-DD)." },
+          checkOut: { type: "string", description: "Default check-out (YYYY-MM-DD)." },
+        },
+        required: [],
+      },
+    },
+    {
+      name: COMMAND_OUTPUT_TOOL,
+      description: "Render streamed backend command output (Terraform, kubectl, bash) as a terminal.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Card heading." },
+          command: { type: "string", description: "The command that ran." },
+          lines: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                stream: { type: "string", description: "stdout or stderr." },
+                text: { type: "string" },
+              },
+              required: ["text"],
+            },
+            description: "Output lines in order.",
+          },
+          exitCode: { type: "number", description: "Process exit code." },
+        },
+        required: ["command", "lines"],
+      },
+    },
+    {
+      name: QUIZ_TOOL,
+      description:
+        "Render an interactive practice question; answering updates the training state.",
+      parameters: {
+        type: "object",
+        properties: {
+          prompt: { type: "string", description: "The question, e.g. '7 x 8'." },
+          answer: { type: "number", description: "The correct answer." },
+          choices: {
+            type: "array",
+            items: { type: "number" },
+            description: "Optional multiple-choice options; omit for free input.",
+          },
+          level: { type: "number", description: "Difficulty level 1-10." },
+          index: { type: "number", description: "Question number in the set." },
+          total: { type: "number", description: "Total questions in the set." },
+        },
+        required: ["prompt", "answer"],
       },
     },
   ];

@@ -9,9 +9,13 @@ import {
   APPROVAL_TOOL,
   CHART_TOOL,
   CITATIONS_TOOL,
+  COMMAND_OUTPUT_TOOL,
+  DATE_PICKER_TOOL,
   FOLLOWUP_TOOL,
   FORM_TOOL,
+  HOTELS_TOOL,
   LOOKUP_TOOL,
+  QUIZ_TOOL,
   SUGGESTED_QUESTIONS_TOOL,
   TABLE_TOOL,
 } from "@/lib/catalog";
@@ -59,6 +63,43 @@ interface FormArgs {
   title?: string;
   submitLabel?: string;
   fields?: FormField[];
+}
+
+interface HotelArgs {
+  title?: string;
+  hotels?: Array<{
+    name?: string;
+    area?: string;
+    rating?: number;
+    pricePerNight?: number;
+    currency?: string;
+    seaside?: boolean;
+    tursabApproved?: boolean;
+    tags?: string[];
+  }>;
+}
+
+interface DatePickerArgs {
+  title?: string;
+  nights?: number;
+  checkIn?: string;
+  checkOut?: string;
+}
+
+interface CommandArgs {
+  title?: string;
+  command?: string;
+  lines?: Array<{ stream?: string; text?: string }>;
+  exitCode?: number;
+}
+
+interface QuizArgs {
+  prompt?: string;
+  answer?: number;
+  choices?: number[];
+  level?: number;
+  index?: number;
+  total?: number;
 }
 
 function CopilotFormRender({
@@ -277,6 +318,119 @@ export function CopilotGenerativeUI() {
       args: FormArgs;
       respond?: (value: unknown) => void;
     }) => <CopilotFormRender args={props.args ?? {}} respond={props.respond} />,
+  });
+
+  useCopilotAction({
+    name: HOTELS_TOOL,
+    available: "disabled",
+    render: (props: { args: HotelArgs }) => {
+      const { title, hotels = [] } = props.args ?? {};
+      return (
+        <div className="card">
+          <span className="tool-badge">hotels, {HOTELS_TOOL}</span>
+          {title && <div style={{ fontWeight: 600, marginBottom: 8 }}>{title}</div>}
+          <div className="hotel-grid">
+            {hotels.map((hotel, index) => (
+              <div key={index} className="hotel-card">
+                <div className="hotel-top">
+                  <span className="hotel-name">{hotel.name}</span>
+                  {hotel.rating ? <span className="hotel-rating">★ {hotel.rating}</span> : null}
+                </div>
+                <div className="hotel-area">{hotel.area}</div>
+                <div className="hotel-bottom">
+                  <span className="hotel-price">
+                    {hotel.pricePerNight} {hotel.currency}
+                    <span className="hotel-per"> / night</span>
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    },
+  });
+
+  useCopilotAction({
+    name: DATE_PICKER_TOOL,
+    available: "disabled",
+    render: (props: { args: DatePickerArgs }) => {
+      const { title, nights, checkIn, checkOut } = props.args ?? {};
+      return (
+        <div className="card">
+          <span className="tool-badge">dates, {DATE_PICKER_TOOL}</span>
+          {title && <div style={{ fontWeight: 600, marginBottom: 8 }}>{title}</div>}
+          <div className="datepick-row">
+            <label className="datepick-field">
+              <span className="datepick-label">Check-in</span>
+              <input type="date" className="form-input" defaultValue={checkIn} />
+            </label>
+            <label className="datepick-field">
+              <span className="datepick-label">Check-out</span>
+              <input type="date" className="form-input" defaultValue={checkOut} />
+            </label>
+          </div>
+          {nights ? <div className="datepick-nights">{nights} nights</div> : null}
+        </div>
+      );
+    },
+  });
+
+  useCopilotAction({
+    name: COMMAND_OUTPUT_TOOL,
+    available: "disabled",
+    render: (props: { args: CommandArgs }) => {
+      const { title, command, lines = [], exitCode } = props.args ?? {};
+      return (
+        <div className="card">
+          <span className="tool-badge">command, {COMMAND_OUTPUT_TOOL}</span>
+          {title && <div style={{ fontWeight: 600, marginBottom: 8 }}>{title}</div>}
+          <div className="terminal">
+            <div className="terminal-bar">
+              <span className="terminal-cmd">$ {command}</span>
+            </div>
+            <pre className="terminal-body">
+              {lines.map((line, index) => (
+                <span key={index} className={`term-line ${line.stream === "stderr" ? "err" : ""}`}>
+                  {line.text}
+                  {"\n"}
+                </span>
+              ))}
+            </pre>
+            {exitCode !== undefined && (
+              <div className={`terminal-exit ${exitCode === 0 ? "ok" : "bad"}`}>exit {exitCode}</div>
+            )}
+          </div>
+        </div>
+      );
+    },
+  });
+
+  useCopilotAction({
+    name: QUIZ_TOOL,
+    available: "disabled",
+    render: (props: { args: QuizArgs }) => {
+      const { prompt, choices = [], level, index, total } = props.args ?? {};
+      return (
+        <div className="card quiz-card">
+          <span className="tool-badge">quiz, {QUIZ_TOOL}</span>
+          <div className="quiz-meta">
+            <span className="quiz-level">Level {level ?? 1}</span>
+            <span className="quiz-count">
+              Q{index ?? 1}/{total ?? 1}
+            </span>
+          </div>
+          <div className="quiz-prompt">{prompt} = ?</div>
+          <div className="quiz-choices">
+            {choices.map((choice) => (
+              <span key={choice} className="quiz-choice">
+                {choice}
+              </span>
+            ))}
+          </div>
+        </div>
+      );
+    },
   });
 
   useCopilotAction({

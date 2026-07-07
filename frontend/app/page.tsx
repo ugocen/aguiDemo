@@ -6,6 +6,7 @@ import { AgentList } from "@/components/sidebar/AgentList";
 import { HistoryList } from "@/components/sidebar/HistoryList";
 import { ChatArea } from "@/components/chat/ChatArea";
 import { CanvasPanel } from "@/components/canvas/CanvasPanel";
+import { SharedStatePanel } from "@/components/canvas/SharedStatePanel";
 import { EventInspector } from "@/components/inspector/EventInspector";
 import { CopilotChatArea } from "@/components/copilot/CopilotChatArea";
 import { useStore } from "@/lib/store";
@@ -58,6 +59,7 @@ export default function WorkspacePage() {
             <main className="main">
               <ChatArea />
               {canvasActive && <CanvasPanel />}
+              <SharedStatePanel />
             </main>
             {showInspector && <EventInspector onClose={() => setShowInspector(false)} />}
           </>

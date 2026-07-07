@@ -1,7 +1,10 @@
 from agents.content_studio import ContentStudioAgent
 from agents.growth_analyst import GrowthAnalystAgent
 from agents.incident_commander import IncidentCommanderAgent
+from agents.math_coach import MathCoachAgent
+from agents.platform_architect import PlatformArchitectAgent
 from agents.research_desk import ResearchDeskAgent
+from agents.travel_concierge import TravelConciergeAgent
 from agents.trip_architect import TripArchitectAgent
 
 _AGENT_CLASSES = [
@@ -10,6 +13,9 @@ _AGENT_CLASSES = [
     IncidentCommanderAgent,
     GrowthAnalystAgent,
     ContentStudioAgent,
+    TravelConciergeAgent,
+    PlatformArchitectAgent,
+    MathCoachAgent,
 ]
 
 SCENARIO_AGENTS = {cls.id: cls for cls in _AGENT_CLASSES}

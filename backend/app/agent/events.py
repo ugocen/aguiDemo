@@ -48,6 +48,20 @@ class DocumentDelta:
 
 
 @dataclass
+class StateSnapshot:
+    """Replace arbitrary shared-state keys (e.g. cart, quiz) in one snapshot."""
+
+    state: dict[str, Any]
+
+
+@dataclass
+class StateDelta:
+    """Patch arbitrary shared-state keys with JSON Patch ops (bidirectional)."""
+
+    patch: list[dict[str, Any]] = field(default_factory=list)
+
+
+@dataclass
 class ApprovalRequested:
     """Human-in-the-loop request.
 
@@ -69,5 +83,7 @@ AgentEvent = (
     | ToolCallCompleted
     | DocumentSnapshot
     | DocumentDelta
+    | StateSnapshot
+    | StateDelta
     | ApprovalRequested
 )

@@ -72,9 +72,14 @@ npm run typecheck && npm run lint && npm run build
   is routed by `forwardedProps.agentId`.
 - **Backend routing by selected agent:** `app/agent/factory.py::build_agent`.
 
-There are eight catalog tools and ten message/card types (text and canvas are not
-tools): text, lookup tool, table, chart, follow-up, suggested questions,
-citations, form, approval (HITL), canvas.
+There are twelve catalog tools plus message/card types that are not tools (text,
+canvas): text, lookup tool, table, chart, follow-up, suggested questions,
+citations, form, approval (HITL), hotels, date picker, command output, quiz, and
+canvas. Beyond the canvas document, agents share arbitrary **bidirectional state**
+(e.g. a booking cart, quiz progress): agents emit `StateSnapshot`/`StateDelta`
+(mapped to `STATE_SNAPSHOT`/`STATE_DELTA`), the frontend holds it in
+`store.sharedState`, interactive cards write to it via `patchSharedState`, and the
+whole object round-trips back to the agent in `RunAgentInput.state`.
 
 ## Gotchas
 

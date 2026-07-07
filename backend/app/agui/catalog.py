@@ -8,6 +8,10 @@ FOLLOWUP_TOOL = "renderFollowUp"
 CHART_TOOL = "renderChart"
 CITATIONS_TOOL = "renderCitations"
 FORM_TOOL = "renderForm"
+HOTELS_TOOL = "renderHotels"
+DATE_PICKER_TOOL = "renderDatePicker"
+COMMAND_OUTPUT_TOOL = "renderCommandOutput"
+QUIZ_TOOL = "renderQuiz"
 
 
 def tool_catalog() -> list[dict[str, Any]]:
@@ -173,6 +177,113 @@ def tool_catalog() -> list[dict[str, Any]]:
                     },
                 },
                 "required": ["fields"],
+            },
+        },
+        {
+            "name": HOTELS_TOOL,
+            "description": (
+                "Render clickable hotel result cards the user can select. Selecting one "
+                "updates the shared booking state (the cart)."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string", "description": "Results heading."},
+                    "hotels": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {"type": "string"},
+                                "name": {"type": "string"},
+                                "area": {"type": "string", "description": "District or area."},
+                                "rating": {"type": "number", "description": "Star rating 0-5."},
+                                "pricePerNight": {"type": "number"},
+                                "currency": {"type": "string", "description": "e.g. TRY, EUR."},
+                                "seaside": {"type": "boolean", "description": "On the seafront."},
+                                "tursabApproved": {
+                                    "type": "boolean",
+                                    "description": "Holds a valid TURSAB licence.",
+                                },
+                                "tags": {"type": "array", "items": {"type": "string"}},
+                            },
+                            "required": ["name", "area", "pricePerNight"],
+                        },
+                        "description": "Hotels to offer.",
+                    },
+                },
+                "required": ["hotels"],
+            },
+        },
+        {
+            "name": DATE_PICKER_TOOL,
+            "description": (
+                "Render a check-in/check-out date picker. Confirming the dates updates the "
+                "shared booking state (the cart)."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string", "description": "Picker heading."},
+                    "nights": {"type": "number", "description": "Suggested number of nights."},
+                    "checkIn": {"type": "string", "description": "Default check-in (YYYY-MM-DD)."},
+                    "checkOut": {"type": "string", "description": "Default check-out (YYYY-MM-DD)."},
+                },
+                "required": [],
+            },
+        },
+        {
+            "name": COMMAND_OUTPUT_TOOL,
+            "description": (
+                "Render the streamed output of a backend command (Terraform, kubectl, bash) "
+                "as a terminal card."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string", "description": "Card heading."},
+                    "command": {"type": "string", "description": "The command that ran."},
+                    "lines": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "stream": {
+                                    "type": "string",
+                                    "description": "stdout or stderr.",
+                                },
+                                "text": {"type": "string"},
+                            },
+                            "required": ["text"],
+                        },
+                        "description": "Output lines in order.",
+                    },
+                    "exitCode": {"type": "number", "description": "Process exit code."},
+                },
+                "required": ["command", "lines"],
+            },
+        },
+        {
+            "name": QUIZ_TOOL,
+            "description": (
+                "Render an interactive practice question. Answering it updates the shared "
+                "training state (score, streak, level) so the agent can adapt difficulty."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "prompt": {"type": "string", "description": "The question, e.g. '7 x 8'."},
+                    "answer": {"type": "number", "description": "The correct answer."},
+                    "choices": {
+                        "type": "array",
+                        "items": {"type": "number"},
+                        "description": "Optional multiple-choice options; omit for free input.",
+                    },
+                    "level": {"type": "number", "description": "Difficulty level 1-10."},
+                    "index": {"type": "number", "description": "Question number in the set."},
+                    "total": {"type": "number", "description": "Total questions in the set."},
+                },
+                "required": ["prompt", "answer"],
             },
         },
     ]

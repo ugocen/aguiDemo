@@ -252,6 +252,9 @@ scripted fallback so the demo runs without credentials):
 | `incident-commander` | agentic generative UI (live steps) + HITL | reasoning, steps, lookup, table, chart, approval |
 | `growth-analyst` | tool-based generative UI | reasoning, table, chart, follow-up, suggestions |
 | `content-studio` | predictive state updates (canvas) | reasoning, canvas, follow-up, approval |
+| `travel-concierge` | tool-based generative UI + shared state | reasoning, hotels, date picker, table, approval, cart |
+| `platform-architect` | backend tool rendering + Docs-as-Code | reasoning, steps, command output, table, approval, canvas |
+| `math-coach` | agentic generative UI + shared state | reasoning, quiz, chart, follow-up, adaptive state |
 
 They appear in the sidebar; the frontend sends the selected id in
 `RunAgentInput.forwardedProps`, and `app/agent/factory.py` routes to the agent.

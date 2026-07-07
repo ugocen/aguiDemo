@@ -9,6 +9,9 @@ const ICONS: Record<string, { glyph: string; cls: string }> = {
   "incident-commander": { glyph: "🚨", cls: "ic-support" },
   "growth-analyst": { glyph: "📈", cls: "ic-data" },
   "content-studio": { glyph: "✍️", cls: "ic-doc" },
+  "travel-concierge": { glyph: "🏖️", cls: "ic-travel" },
+  "platform-architect": { glyph: "🛠️", cls: "ic-ops" },
+  "math-coach": { glyph: "🧮", cls: "ic-math" },
 };
 
 export function AgentList() {
