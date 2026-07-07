@@ -12,6 +12,7 @@ HOTELS_TOOL = "renderHotels"
 DATE_PICKER_TOOL = "renderDatePicker"
 COMMAND_OUTPUT_TOOL = "renderCommandOutput"
 QUIZ_TOOL = "renderQuiz"
+EDIT_DOCUMENT_TOOL = "editDocument"
 
 
 def tool_catalog() -> list[dict[str, Any]]:
@@ -284,6 +285,24 @@ def tool_catalog() -> list[dict[str, Any]]:
                     "total": {"type": "number", "description": "Total questions in the set."},
                 },
                 "required": ["prompt", "answer"],
+            },
+        },
+        {
+            "name": EDIT_DOCUMENT_TOOL,
+            "description": (
+                "Write or revise the shared canvas document. Provide a title and/or the full "
+                "content; the canvas updates live via shared state."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string", "description": "Document title."},
+                    "content": {
+                        "type": "string",
+                        "description": "Full document body (replaces the current content).",
+                    },
+                },
+                "required": [],
             },
         },
     ]

@@ -505,6 +505,31 @@ one, otherwise tool name + date. Examples:
 
 <!-- NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-07-07T00:55Z — Claude-Code (Opus 4.8, 2026-07-07)
+**Did:** Closed three more open items. (1) **Entra sign-in wired** — the user
+supplied the `agui-test` app registration (single-tenant SPA, PKCE, no secret).
+`frontend/lib/auth.ts` now uses `@azure/msal-browser` (already a dep) to sign in
+and return the **ID token**; the backend `auth/entra.py` was already implemented
+(JWKS, audience = client id, issuer). Filled the tenant/client ids + v2.0 issuer
+into `.env`/`.env.example` (client + tenant are public — they ship in the SPA;
+`frontend/.env` is a symlink to root `.env`). **Dev mode stays the default** so
+nothing breaks; flip `AUTH_MODE`/`NEXT_PUBLIC_AUTH_MODE` to `entra` to use it. Add
+each serving origin as a SPA redirect URI. Interactive login needs a real browser
+(cannot verify headless); dev-mode load re-verified (app boots, agents fetch, no
+MSAL invoked). Also hardened the smoke with `AUTH_MODE=dev` setdefault. (2)
+**`editDocument` tool** — the model can now write/revise the canvas; `LLMToolAgent`
+maps the call to a `DocumentDelta`. **Verified live** with real Gemini via a direct
+SSE call: general-assistant emitted `STATE_DELTA` on `/document/content` with the
+generated copy. Catalog parity is now **13 tools**. (3) **CopilotKit shared state**
+— `CopilotSharedStatePanel` reads `useCoAgent` and shows the live cart/quiz (same
+hook the canvas panel uses); build-verified (secondary client, full runtime needs
+a browser). **Verified:** pytest 18; smoke OK (parity 13); frontend
+typecheck/lint/build clean.
+**Still open (larger backlog):** durable HITL (needs LangGraph checkpointing — the
+run coroutine is in-memory today, so surviving a restart is a re-architecture, not
+a config); replay dashboard (moderate: `/agui/runs/<id>/log` + run_capture exist,
+UI to re-play a captured run remains).
+
 ### 2026-07-07T00:29Z — Claude-Code (Opus 4.8, 2026-07-07)
 **Did:** Closed the open "Next" items. (1) **Stuck-run fix** — a HITL-suspended
 run kept `isRunning` true, so switching agents mid-approval wedged the composer.

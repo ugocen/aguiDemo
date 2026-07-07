@@ -6,6 +6,7 @@ from app.agent.base import latest_user_text
 from app.agent.events import (
     AgentEvent,
     ApprovalRequested,
+    DocumentDelta,
     ReasoningDelta,
     StepFinished,
     StepStarted,
@@ -14,7 +15,7 @@ from app.agent.events import (
     ToolCallStarted,
 )
 from app.agent.tools import lookup_knowledge
-from app.agui.catalog import APPROVAL_TOOL, LOOKUP_TOOL, tool_catalog
+from app.agui.catalog import APPROVAL_TOOL, EDIT_DOCUMENT_TOOL, LOOKUP_TOOL, tool_catalog
 from app.agui.resume import ApprovalDecision
 from app.config.settings import Settings
 from app.llm.base import LLMError, ReasoningChunk, TextChunk, ToolCallChunk
@@ -26,8 +27,9 @@ DEFAULT_SYSTEM = (
     "instead of describing data in text: call renderTable for tabular data, "
     "renderChart for numeric series, renderFollowUp for next steps, "
     "renderCitations for sources, renderSuggestedQuestions for follow-up prompts, "
-    "and lookupKnowledge to look a fact up. Only call a tool when it genuinely "
-    "helps; a plain answer is fine otherwise."
+    "lookupKnowledge to look a fact up, and editDocument to write or revise the "
+    "shared canvas document. Only call a tool when it genuinely helps; a plain "
+    "answer is fine otherwise."
 )
 
 # Encourage the model to emit all needed tool calls in a single turn. Each turn
@@ -147,6 +149,8 @@ class LLMToolAgent:
                 if any(c.name == LOOKUP_TOOL for c in calls)
                 else "Awaiting approval"
                 if any(c.name == APPROVAL_TOOL for c in calls)
+                else "Writing"
+                if any(c.name == EDIT_DOCUMENT_TOOL for c in calls)
                 else "Rendering"
             )
             yield StepStarted(step)
@@ -169,6 +173,28 @@ class LLMToolAgent:
                     )
                     messages.append(
                         {"role": "tool", "tool_call_id": c.id, "name": c.name, "content": result}
+                    )
+                elif c.name == EDIT_DOCUMENT_TOOL:
+                    patch = []
+                    title = c.arguments.get("title")
+                    content = c.arguments.get("content")
+                    if title is not None:
+                        patch.append(
+                            {"op": "replace", "path": "/document/title", "value": str(title)}
+                        )
+                    if content is not None:
+                        patch.append(
+                            {"op": "replace", "path": "/document/content", "value": str(content)}
+                        )
+                    if patch:
+                        yield DocumentDelta(patch=patch)
+                    messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": c.id,
+                            "name": c.name,
+                            "content": {"status": "edited"},
+                        }
                     )
                 else:
                     yield ToolCallStarted(tool_call_id=c.id, name=c.name, args=c.arguments)

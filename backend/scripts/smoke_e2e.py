@@ -19,6 +19,7 @@ from pathlib import Path
 
 os.environ.setdefault("LOG_LEVEL", "critical")
 os.environ.setdefault("AGENT_MODE", "mock")
+os.environ.setdefault("AUTH_MODE", "dev")
 logging.disable(logging.CRITICAL)
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]

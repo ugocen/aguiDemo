@@ -8,6 +8,7 @@ import { COPILOT_AGENT_NAME } from "@/app/api/copilotkit/agentName";
 import { useStore } from "@/lib/store";
 import { CopilotCanvasPanel } from "./CopilotCanvasPanel";
 import { CopilotGenerativeUI } from "./CopilotGenerativeUI";
+import { CopilotSharedStatePanel } from "./CopilotSharedStatePanel";
 
 /**
  * CopilotKit client surface. The provider talks to the AG-UI backend through the
@@ -37,6 +38,7 @@ export function CopilotChatArea() {
           />
         </div>
         <CopilotCanvasPanel />
+        <CopilotSharedStatePanel />
       </div>
     </CopilotKit>
   );

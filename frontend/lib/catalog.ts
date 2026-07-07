@@ -10,6 +10,7 @@ export const HOTELS_TOOL = "renderHotels";
 export const DATE_PICKER_TOOL = "renderDatePicker";
 export const COMMAND_OUTPUT_TOOL = "renderCommandOutput";
 export const QUIZ_TOOL = "renderQuiz";
+export const EDIT_DOCUMENT_TOOL = "editDocument";
 
 export interface ToolSchema {
   name: string;
@@ -254,6 +255,19 @@ export function toolCatalog(): ToolSchema[] {
           total: { type: "number", description: "Total questions in the set." },
         },
         required: ["prompt", "answer"],
+      },
+    },
+    {
+      name: EDIT_DOCUMENT_TOOL,
+      description:
+        "Write or revise the shared canvas document (title and/or full content); updates live.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Document title." },
+          content: { type: "string", description: "Full document body (replaces the content)." },
+        },
+        required: [],
       },
     },
   ];

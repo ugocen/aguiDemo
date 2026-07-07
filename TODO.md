@@ -57,15 +57,17 @@ summarized in `docs/PROJECT_STATUS_AND_ROADMAP.md`.
       growth-analyst scenarios are model-driven; `content-studio` stays scripted
       (the canvas has no tool), and `mock` mode / no key stay scripted so the demo
       and smoke are deterministic.
-    - [ ] Optional: an `editDocument` tool so the canvas (content-studio) is
-          model-driven too. (The default LLM agent is now exposed — done.)
-- [ ] **Entra sign-in end to end** — MSAL token in `frontend/lib/auth.ts`,
-      `AUTH_MODE=entra`, per-user scoping. **Blocked on the user:** needs the Entra
-      app registration values (tenant id, client id, redirect URI, audience). The
-      `auth.ts`/`providers.tsx` seams are ready; only the env + MSAL call remain.
-- [ ] **Shared state in CopilotKit mode** — the custom client has the full
-      bidirectional loop; the CopilotKit client renders the new cards display-only.
-      Wiring `useCoAgent` there needs a browser + the CopilotKit runtime to verify.
+    - [x] `editDocument` tool — the model writes/revises the canvas; the LLM
+          agent maps the call to a document delta. Verified live (real Gemini
+          emits a `STATE_DELTA` on `/document/content`).
+- [x] **Entra sign-in wired** — MSAL (PKCE, ID token) in `frontend/lib/auth.ts`,
+      config filled from the `agui-test` app registration, backend validates
+      (issuer + audience = client id). Dev mode stays the default; flip
+      `AUTH_MODE`/`NEXT_PUBLIC_AUTH_MODE` to `entra` and sign in to use it. The
+      interactive login needs a real browser (cannot verify headless).
+- [x] **Shared state in CopilotKit mode** — `CopilotSharedStatePanel` reads
+      `useCoAgent` and shows the live cart/quiz (same hook as the canvas). Build-
+      verified; full runtime needs the CopilotKit client in a browser.
 - [ ] **AgentCore deploy** (Phase 2) and **EKS deploy** (Phase 3) — run the
       prepared manual steps (needs AWS). First run `/aws-bootstrap` once with root
       to create the scoped `agui-deployer` IAM user, then deploy with that profile
