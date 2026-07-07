@@ -27,7 +27,9 @@ async def _collect(translator: Translator, run_id: str, approve: bool) -> list[d
     async def resolver() -> None:
         for _ in range(200):
             if resume_registry.is_waiting(run_id):
-                resume_registry.resolve(run_id, ApprovalDecision(approved=approve, reason="test"))
+                await resume_registry.resolve(
+                    run_id, ApprovalDecision(approved=approve, reason="test")
+                )
                 return
             await asyncio.sleep(0.01)
 

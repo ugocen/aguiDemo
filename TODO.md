@@ -72,9 +72,18 @@ summarized in `docs/PROJECT_STATUS_AND_ROADMAP.md`.
       prepared manual steps (needs AWS). First run `/aws-bootstrap` once with root
       to create the scoped `agui-deployer` IAM user, then deploy with that profile
       (`deploy/aws/`).
-- [ ] **Durable HITL** — replace the in-memory resume registry with a
-      workflow-backed store so suspended runs survive restarts.
-- [ ] **Replay dashboard** — pull, lint, and replay captured event logs in the UI.
+- [x] **Durable HITL** — the resume registry is now DB-backed (`pending_approvals`
+      table): decisions are written through, order-independent, and survive a
+      restart (a fresh registry reads the decision from the DB). Falls back to
+      in-memory when no DB is configured. `GET /agui/approvals` lists pending ones.
+      (Resuming a run's coroutine after a mid-run crash still needs graph
+      checkpointing; the decision channel is what is durable.) Tested in
+      `tests/test_durable_hitl.py`.
+- [x] **Replay dashboard** — `GET /agui/runs` + `list_run_logs` list captured
+      runs; the `ReplayPanel` re-plays a run's recorded events back through the
+      store (play/pause/step/restart/speed) so the whole run renders again. The
+      playback loop uses a virtual clock so pace is correct and renders stay
+      bounded. Browser-verified (replayed a run's cards + HITL cart faithfully).
 
 The canonical, live version of this list is the session task tracker; this file
 mirrors it for anyone reading the repo.

@@ -46,3 +46,30 @@ def load_run_log(run_id: str) -> list[dict[str, Any]]:
         return []
     with path.open("r", encoding="utf-8") as handle:
         return [json.loads(line) for line in handle if line.strip()]
+
+
+def list_run_logs(limit: int = 100) -> list[dict[str, Any]]:
+    """Summaries of captured runs (newest first) for the replay dashboard."""
+    if not RUN_LOG_DIR.exists():
+        return []
+    summaries: list[dict[str, Any]] = []
+    for path in RUN_LOG_DIR.glob("*.jsonl"):
+        try:
+            with path.open("r", encoding="utf-8") as handle:
+                lines = [line for line in handle if line.strip()]
+            if not lines:
+                continue
+            first = json.loads(lines[0])
+            summaries.append(
+                {
+                    "run_id": first.get("run_id", path.stem),
+                    "thread_id": first.get("thread_id", ""),
+                    "user": first.get("user", ""),
+                    "count": len(lines),
+                    "modified": path.stat().st_mtime,
+                }
+            )
+        except (OSError, json.JSONDecodeError):
+            continue
+    summaries.sort(key=lambda s: s["modified"], reverse=True)
+    return summaries[:limit]

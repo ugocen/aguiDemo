@@ -8,6 +8,7 @@ import { ChatArea } from "@/components/chat/ChatArea";
 import { CanvasPanel } from "@/components/canvas/CanvasPanel";
 import { SharedStatePanel } from "@/components/canvas/SharedStatePanel";
 import { EventInspector } from "@/components/inspector/EventInspector";
+import { ReplayPanel } from "@/components/inspector/ReplayPanel";
 import { CopilotChatArea } from "@/components/copilot/CopilotChatArea";
 import { useStore } from "@/lib/store";
 
@@ -17,6 +18,7 @@ export default function WorkspacePage() {
   const doc = useStore((s) => s.doc);
   const eventCount = useStore((s) => s.eventLog.length);
   const [showInspector, setShowInspector] = useState(false);
+  const [showReplay, setShowReplay] = useState(false);
   const canvasActive = doc.title !== "Untitled" || doc.content.length > 0;
   const useCopilot = CLIENT_MODE === "copilotkit";
 
@@ -39,8 +41,25 @@ export default function WorkspacePage() {
           </div>
           <div className="topbar-right">
             {!useCopilot && (
-              <button className="btn ghost" onClick={() => setShowInspector((v) => !v)}>
+              <button
+                className="btn ghost"
+                onClick={() => {
+                  setShowInspector((v) => !v);
+                  setShowReplay(false);
+                }}
+              >
                 {showInspector ? "Hide events" : `Events${eventCount ? ` · ${eventCount}` : ""}`}
+              </button>
+            )}
+            {!useCopilot && (
+              <button
+                className="btn ghost"
+                onClick={() => {
+                  setShowReplay((v) => !v);
+                  setShowInspector(false);
+                }}
+              >
+                {showReplay ? "Hide replay" : "Replay"}
               </button>
             )}
             <div className="user-chip">
@@ -62,6 +81,7 @@ export default function WorkspacePage() {
               <SharedStatePanel />
             </main>
             {showInspector && <EventInspector onClose={() => setShowInspector(false)} />}
+            {showReplay && <ReplayPanel onClose={() => setShowReplay(false)} />}
           </>
         )}
       </div>

@@ -1314,6 +1314,77 @@ button {
   background: #34343d;
 }
 
+/* Replay dashboard (reuses the dark inspector shell) */
+.replay-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #322f3d;
+}
+.replay-controls .btn {
+  background: #2a2734;
+  color: #e8e6f1;
+  border-color: #423e50;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+.replay-controls .btn.approve {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.replay-controls .btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.replay-speed {
+  background: #2a2734;
+  color: #e8e6f1;
+  border: 1px solid #423e50;
+  border-radius: 6px;
+  padding: 3px 6px;
+  font-size: 12px;
+}
+.replay-progress {
+  margin-left: auto;
+  color: #a5a1b8;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.replay-run {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 6px 8px;
+  color: #e8e6f1;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.replay-run:hover {
+  background: #24212e;
+}
+.replay-run.active {
+  background: #2a2440;
+  border-color: #6b5bd0;
+}
+.replay-run-id {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.replay-run-meta {
+  color: #a5a1b8;
+  white-space: nowrap;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation: none !important;

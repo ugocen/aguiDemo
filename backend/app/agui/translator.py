@@ -315,7 +315,12 @@ class Translator:
                             type=EventType.TOOL_CALL_END, tool_call_id=agent_event.tool_call_id
                         )
                     )
-                    resume_registry.arm(run_id)
+                    await resume_registry.arm(
+                        run_id,
+                        thread_id=thread_id,
+                        user_id=self._user_id,
+                        args=agent_event.args,
+                    )
                     decision: ApprovalDecision = await resume_registry.wait(run_id)
                     yield self._emit(
                         ToolCallResultEvent(

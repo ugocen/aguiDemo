@@ -505,6 +505,34 @@ one, otherwise tool name + date. Examples:
 
 <!-- NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-07-07T01:24Z — Claude-Code (Opus 4.8, 2026-07-07)
+**Did:** Finished the last two backlog features with tests + browser debug. (1)
+**Durable HITL** — the resume registry is now DB-backed: a new `pending_approvals`
+table records each armed approval (status `pending`) and its decision (status
+`resolved`), write-through and order-independent, so a decision survives a
+process restart (a fresh `ResumeRegistry` reads it from the DB and returns without
+blocking). It degrades to pure in-memory when no DB is configured (unit tests), so
+nothing else broke. `arm`/`resolve`/`wait` are now async (translator + router +
+`test_event_order` updated). Added `GET /agui/approvals` (pending list) and
+`tests/test_durable_hitl.py` (restart durability, order-independence, listing,
+in-memory fallback). Full run-coroutine resumption after a crash still needs graph
+checkpointing — documented; the decision channel is what is durable. (2) **Replay
+dashboard** — `GET /agui/runs` + `list_run_logs()` summarize captured runs; the
+new `ReplayPanel` (topbar "Replay" toggle, mutually exclusive with the inspector)
+lists them and re-plays a run's recorded AG-UI events back through the store with
+play/pause/step/restart/speed, reproducing reasoning/steps/cards/HITL exactly.
+**Debug note:** first tried an effect-per-event loop, then rAF — both misbehaved
+in the *hidden* preview tab (rAF pauses, `setTimeout` throttles to ~1s when
+`document.hidden`). Settled on a `setTimeout(16ms)` loop with a **virtual clock**
+(`floor(elapsed/delay)`), which keeps correct pace and bounded renders whether the
+tab is foreground (smooth) or hidden (batched). **Verified:** pytest 22; smoke OK
+(parity 13); frontend typecheck/lint/build clean; browser-replayed a run to 63/63
+reproducing its hotel cards + date picker + table + approval + the shared-state
+cart (Hotel: Lara Bay Resort, set by the replayed HITL decision).
+**Open items:** none from the prior backlog — Entra (needs the user's browser
+login), CopilotKit-mode shared state (needs a browser), durable-run checkpointing,
+and the AWS redeploy (scripts ready) are the remaining optional/blocked items.
+
 ### 2026-07-07T00:55Z — Claude-Code (Opus 4.8, 2026-07-07)
 **Did:** Closed three more open items. (1) **Entra sign-in wired** — the user
 supplied the `agui-test` app registration (single-tenant SPA, PKCE, no secret).

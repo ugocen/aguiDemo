@@ -87,7 +87,9 @@ whole object round-trips back to the agent in `RunAgentInput.state`.
   Docker images build from the repo root so `agents/` is copied in.
 - structlog reserves `event`; use `event_type` as the log kwarg.
 - HITL resume can arrive before the run suspends; `resume.py` buffers the decision
-  — keep it order-independent.
+  — keep it order-independent. The registry is DB-backed (`pending_approvals`):
+  decisions are written through and survive a restart, and it degrades to
+  in-memory when no DB is configured. `arm`/`resolve`/`wait` are async.
 - CopilotKit 1.4.x ships source-only (no `dist`, broken); use 1.62.x with
   `--legacy-peer-deps`.
 

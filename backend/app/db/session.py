@@ -16,6 +16,11 @@ def init_engine(settings: Settings) -> None:
     _sessionmaker = async_sessionmaker(_engine, expire_on_commit=False)
 
 
+def is_initialized() -> bool:
+    """Whether a database is configured, so callers can degrade gracefully."""
+    return _sessionmaker is not None
+
+
 async def create_all() -> None:
     if _engine is None:
         raise RuntimeError("engine not initialized")

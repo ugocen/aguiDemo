@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from app.agent.base import latest_user_text
 from app.agent.factory import build_agent
 from app.agui.resume import ApprovalDecision, resume_registry
-from app.agui.run_capture import RunCapture, load_run_log
+from app.agui.run_capture import RunCapture, list_run_logs, load_run_log
 from app.agui.translator import RunResult, Translator
 from app.auth.entra import Principal, get_current_principal
 from app.config.settings import Settings, get_settings
@@ -138,8 +138,24 @@ async def resume_run(
     _principal: Principal = Depends(get_current_principal),
 ) -> dict:
     decision = ApprovalDecision(approved=body.approved, reason=body.reason)
-    resolved = resume_registry.resolve(body.run_id, decision)
+    resolved = await resume_registry.resolve(body.run_id, decision)
     return {"resolved": resolved, "run_id": body.run_id}
+
+
+@router.get("/agui/approvals")
+async def list_approvals(
+    principal: Principal = Depends(get_current_principal),
+) -> dict:
+    """Durable pending human-in-the-loop approvals for the caller."""
+    return {"pending": await resume_registry.list_pending(principal.user_id)}
+
+
+@router.get("/agui/runs")
+async def list_runs(
+    _principal: Principal = Depends(get_current_principal),
+) -> dict:
+    """Summaries of captured runs, newest first, for the replay dashboard."""
+    return {"runs": list_run_logs()}
 
 
 @router.get("/agui/runs/{run_id}/log")

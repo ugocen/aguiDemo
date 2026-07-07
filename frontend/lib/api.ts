@@ -70,3 +70,27 @@ export async function createConversation(
   if (!response.ok) return null;
   return response.json();
 }
+
+export interface RunSummary {
+  run_id: string;
+  thread_id: string;
+  user: string;
+  count: number;
+  modified: number;
+}
+
+export async function fetchRuns(): Promise<RunSummary[]> {
+  const response = await authorized("/agui/runs");
+  if (!response.ok) return [];
+  const data = await response.json();
+  return (data.runs ?? []) as RunSummary[];
+}
+
+/** Returns the recorded AG-UI events for a run, ready to feed back through the store. */
+export async function fetchRunLog(runId: string): Promise<Record<string, unknown>[]> {
+  const response = await authorized(`/agui/runs/${encodeURIComponent(runId)}/log`);
+  if (!response.ok) return [];
+  const data = await response.json();
+  const entries = (data.events ?? []) as Array<{ event?: Record<string, unknown> }>;
+  return entries.map((entry) => entry.event ?? {}).filter((event) => "type" in event);
+}
