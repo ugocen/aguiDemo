@@ -21,6 +21,13 @@ summarized in `docs/PROJECT_STATUS_AND_ROADMAP.md`.
       (adaptive mental-math quiz). Adds `renderHotels`/`renderDatePicker`/
       `renderCommandOutput`/`renderQuiz` and a `sharedState` channel that round-trips
       UI selections back to the agent (`StateDelta` + `RunAgentInput.state`).
+- [x] Run control: a Stop button plus aborting the in-flight/suspended run when
+      switching agents or resetting, so a HITL-suspended run never wedges the
+      composer (`store.beginRun`/`stopRun`, `runAgent` gets an AbortSignal).
+- [x] Default model-driven agent ("General Assistant") is selectable in the
+      sidebar; it routes to the fallback LangGraph/mock agent.
+- [x] Reproducible EKS bring-up/teardown scripts (`deploy/eks/deploy.sh`,
+      `deploy/eks/teardown.sh`) that keep the ACM cert + ECR images.
 - [x] Cloud assets prepared: AgentCore packaging, EKS Helm chart, Dockerfiles.
 - [x] Docs: README, FINDINGS, PROJECT_STATUS_AND_ROADMAP, sample event log.
 
@@ -51,9 +58,14 @@ summarized in `docs/PROJECT_STATUS_AND_ROADMAP.md`.
       (the canvas has no tool), and `mock` mode / no key stay scripted so the demo
       and smoke are deterministic.
     - [ ] Optional: an `editDocument` tool so the canvas (content-studio) is
-          model-driven too; expose the default LLM agent in the sidebar.
+          model-driven too. (The default LLM agent is now exposed — done.)
 - [ ] **Entra sign-in end to end** — MSAL token in `frontend/lib/auth.ts`,
-      `AUTH_MODE=entra`, per-user scoping (needs Entra app registration).
+      `AUTH_MODE=entra`, per-user scoping. **Blocked on the user:** needs the Entra
+      app registration values (tenant id, client id, redirect URI, audience). The
+      `auth.ts`/`providers.tsx` seams are ready; only the env + MSAL call remain.
+- [ ] **Shared state in CopilotKit mode** — the custom client has the full
+      bidirectional loop; the CopilotKit client renders the new cards display-only.
+      Wiring `useCoAgent` there needs a browser + the CopilotKit runtime to verify.
 - [ ] **AgentCore deploy** (Phase 2) and **EKS deploy** (Phase 3) — run the
       prepared manual steps (needs AWS). First run `/aws-bootstrap` once with root
       to create the scoped `agui-deployer` IAM user, then deploy with that profile

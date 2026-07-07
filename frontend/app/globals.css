@@ -1305,6 +1305,15 @@ button {
   color: var(--muted);
 }
 
+.composer-send.stop {
+  background: #4a4b57;
+  color: #fff;
+  font-size: 13px;
+}
+.composer-send.stop:hover {
+  background: #34343d;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation: none !important;

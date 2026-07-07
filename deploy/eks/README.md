@@ -4,6 +4,22 @@ A minimal Helm chart for the frontend and backend. RDS PostgreSQL replaces the
 local Postgres via `secrets.DATABASE_URL`, Entra sign-in is required
 (`AUTH_MODE=entra`), and all endpoints come from env.
 
+## Scripts (reproducible bring-up / teardown)
+
+`deploy.sh` and `teardown.sh` codify the exact steps below so a redeploy is one
+command. Both take env overrides (`CLUSTER`, `REGION`, `RELEASE`, …).
+
+```bash
+# Bring up: cluster + ALB controller + EBS CSI + build/push images + Secret + helm
+SECRETS_ENV=deploy/eks/secrets.env ./deploy/eks/deploy.sh
+# Tear down everything billable (cluster, nodes, NAT, ALB); KEEPS the ACM cert + ECR
+./deploy/eks/teardown.sh
+```
+
+`teardown.sh` keeps the ACM certificate and ECR images, so a later `deploy.sh` is
+fast and skips cert/DNS validation — only the DNS CNAMEs need repointing at the new
+ALB. The steps below are the manual equivalent (and what the scripts run).
+
 ## Build and push images
 
 Run the backend build from the repository root so the scenario agents in

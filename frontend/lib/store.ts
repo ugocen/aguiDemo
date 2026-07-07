@@ -232,6 +232,7 @@ interface StoreState {
   currentRunId: string | null;
   pendingApprovalId: string | null;
   currentStepsId: string | null;
+  runAbort: AbortController | null;
 
   eventLog: EventLogEntry[];
   eventSeq: number;
@@ -251,6 +252,8 @@ interface StoreState {
   setApprovalDecision: (id: string, approved: boolean, reason: string) => void;
   setFormSubmitted: (id: string, values: Record<string, string>) => void;
   patchSharedState: (patch: JsonPatchOp[]) => void;
+  beginRun: (controller: AbortController) => void;
+  stopRun: () => void;
   clearEventLog: () => void;
 }
 
@@ -354,6 +357,7 @@ export const useStore = create<StoreState>((set, get) => ({
   currentRunId: null,
   pendingApprovalId: null,
   currentStepsId: null,
+  runAbort: null,
   eventLog: [],
   eventSeq: 0,
   toolNames: {},
@@ -365,18 +369,22 @@ export const useStore = create<StoreState>((set, get) => ({
   selectAgent: (id) => set({ selectedAgentId: id }),
   setThread: (id) => set({ threadId: id }),
 
-  resetChat: () =>
+  resetChat: () => {
+    get().runAbort?.abort();
     set({
       items: [],
       doc: { ...EMPTY_DOC },
       sharedState: { ...EMPTY_STATE },
       suggestedQuestions: [],
+      isRunning: false,
       pendingApprovalId: null,
       currentRunId: null,
       currentStepsId: null,
+      runAbort: null,
       eventLog: [],
       eventSeq: 0,
-    }),
+    });
+  },
 
   clearEventLog: () => set({ eventLog: [], eventSeq: 0 }),
 
@@ -425,6 +433,16 @@ export const useStore = create<StoreState>((set, get) => ({
       const sharedState = applyStatePatch(s.sharedState, patch);
       return { sharedState, doc: docFromState(sharedState) };
     }),
+
+  beginRun: (controller) => {
+    get().runAbort?.abort();
+    set({ runAbort: controller });
+  },
+
+  stopRun: () => {
+    get().runAbort?.abort();
+    set({ runAbort: null, isRunning: false, pendingApprovalId: null, currentStepsId: null });
+  },
 
   handleEvent: (event) => {
     const state = get();
@@ -868,13 +886,14 @@ export const useStore = create<StoreState>((set, get) => ({
       }
 
       case "RUN_FINISHED":
-        set({ isRunning: false, pendingApprovalId: null, currentStepsId: null });
+        set({ isRunning: false, pendingApprovalId: null, currentStepsId: null, runAbort: null });
         break;
 
       case "RUN_ERROR":
         set((s) => ({
           isRunning: false,
           pendingApprovalId: null,
+          runAbort: null,
           items: [
             ...s.items,
             { kind: "error", id: newId("err"), message: event.message ?? "Run error" },

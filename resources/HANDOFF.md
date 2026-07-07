@@ -505,6 +505,28 @@ one, otherwise tool name + date. Examples:
 
 <!-- NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-07-07T00:29Z — Claude-Code (Opus 4.8, 2026-07-07)
+**Did:** Closed the open "Next" items. (1) **Stuck-run fix** — a HITL-suspended
+run kept `isRunning` true, so switching agents mid-approval wedged the composer.
+Added `runAbort`/`beginRun`/`stopRun` to the store, `resetChat` now aborts the
+in-flight run and resets run state, `runAgent` takes an `AbortSignal`, and the
+composer shows a **Stop (◼)** button while running. Browser-verified: mid-HITL
+agent switch now frees the composer and the next run works; Stop renders during a
+run. (2) **General Assistant** — the default model-driven agent
+(`LangGraphAgent`, or mock without a key) is now selectable in the sidebar via a
+synthetic `general-assistant` descriptor; `build_agent` already falls back for an
+unknown id, so no routing change. (3) **Reproducible deploy** —
+`deploy/eks/deploy.sh` (cluster + ALB controller + EBS CSI + build/push +
+out-of-band Secret + helm) and `deploy/eks/teardown.sh` (mirrors the teardown I
+ran; keeps ACM cert + ECR); both `bash -n` clean and documented in the deploy
+README. **Verified:** pytest 18; smoke OK (9 sidebar entries incl.
+general-assistant, catalog parity 12); frontend typecheck/lint/build clean;
+browser-checked the fix + General Assistant.
+**Still open (reported to user):** Entra sign-in is **blocked on their Entra app
+registration** (tenant/client/redirect/audience — the `auth.ts` seams are ready);
+CopilotKit-mode shared state needs `useCoAgent` + a browser to verify; optional
+`editDocument` tool; larger backlog: durable HITL store, replay dashboard.
+
 ### 2026-07-07T00:12Z — Claude-Code (Opus 4.8, 2026-07-07)
 **Did:** Added three domain scenarios from the user's spec, at full fidelity —
 real bidirectional **Shared State** + new interactive card types (not

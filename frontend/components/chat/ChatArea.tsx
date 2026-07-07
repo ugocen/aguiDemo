@@ -56,6 +56,8 @@ export function ChatArea() {
   const selectedAgentId = useStore((s) => s.selectedAgentId);
   const pushUser = useStore((s) => s.pushUser);
   const handleEvent = useStore((s) => s.handleEvent);
+  const beginRun = useStore((s) => s.beginRun);
+  const stopRun = useStore((s) => s.stopRun);
   const setThread = useStore((s) => s.setThread);
   const setConversations = useStore((s) => s.setConversations);
 
@@ -101,10 +103,14 @@ export function ChatArea() {
       forwardedProps: { agentId: selectedAgentId },
     };
 
+    const controller = new AbortController();
+    beginRun(controller);
     try {
-      await runAgent(input, handleEvent);
+      await runAgent(input, handleEvent, controller.signal);
     } catch (error) {
-      handleEvent({ type: "RUN_ERROR", message: String(error) });
+      if (!controller.signal.aborted) {
+        handleEvent({ type: "RUN_ERROR", message: String(error) });
+      }
     }
 
     fetchConversations().then(setConversations).catch(() => undefined);
@@ -214,14 +220,20 @@ export function ChatArea() {
               }
             }}
           />
-          <button
-            className="composer-send"
-            disabled={isRunning}
-            aria-label="Send"
-            onClick={() => send(draft)}
-          >
-            {isRunning ? "…" : "→"}
-          </button>
+          {isRunning ? (
+            <button
+              className="composer-send stop"
+              aria-label="Stop the run"
+              title="Stop"
+              onClick={() => stopRun()}
+            >
+              ◼
+            </button>
+          ) : (
+            <button className="composer-send" aria-label="Send" onClick={() => send(draft)}>
+              →
+            </button>
+          )}
         </div>
         <div className="composer-hint">
           Streaming typed AG-UI events over SSE · reasoning &amp; steps shown live

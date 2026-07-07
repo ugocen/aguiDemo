@@ -4,6 +4,7 @@ import { fetchConversations } from "@/lib/api";
 import { useStore } from "@/lib/store";
 
 const ICONS: Record<string, { glyph: string; cls: string }> = {
+  "general-assistant": { glyph: "✦", cls: "ic-plan" },
   "research-desk": { glyph: "🔬", cls: "ic-research" },
   "trip-architect": { glyph: "✈️", cls: "ic-plan" },
   "incident-commander": { glyph: "🚨", cls: "ic-support" },

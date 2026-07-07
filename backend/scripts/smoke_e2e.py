@@ -104,6 +104,7 @@ async def main() -> None:
             agents = await c.get("/agents")
             ids = [a["id"] for a in agents.json()]
             expected = [
+                "general-assistant",
                 "research-desk",
                 "trip-architect",
                 "incident-commander",

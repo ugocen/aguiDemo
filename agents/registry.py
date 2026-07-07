@@ -20,6 +20,16 @@ _AGENT_CLASSES = [
 
 SCENARIO_AGENTS = {cls.id: cls for cls in _AGENT_CLASSES}
 
+# Not a scenario class: selecting it sends an agent id the registry does not know,
+# so build_agent falls back to the default model-driven LangGraphAgent (or the
+# scripted mock when there is no provider key). It lets the sidebar reach the
+# free-form agent that decides its own cards.
+DEFAULT_AGENT = {
+    "id": "general-assistant",
+    "name": "General Assistant",
+    "description": "Free-form agent that decides its own cards",
+}
+
 
 def build_scenario_agent(agent_id: str, settings=None):
     """Build a scenario agent.
@@ -49,5 +59,9 @@ def build_scenario_agent(agent_id: str, settings=None):
 
 def scenario_descriptors() -> list[dict[str, str]]:
     return [
-        {"id": cls.id, "name": cls.name, "description": cls.description} for cls in _AGENT_CLASSES
+        DEFAULT_AGENT,
+        *(
+            {"id": cls.id, "name": cls.name, "description": cls.description}
+            for cls in _AGENT_CLASSES
+        ),
     ]
