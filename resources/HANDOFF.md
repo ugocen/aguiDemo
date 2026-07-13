@@ -505,6 +505,10 @@ one, otherwise tool name + date. Examples:
 
 <!-- NEW ENTRIES BELOW, NEWEST FIRST -->
 
+### 2026-07-13T22:35Z — Antigravity (2026-07-13)
+**Did:** Cleaned up stale processes and started the FastAPI backend and Next.js frontend dev servers locally in the background. Confirmed that both servers are healthy (backend /health returns 200 OK, frontend compilation completes successfully with 200 OK).
+**Next:** —
+
 ### 2026-07-07T01:24Z — Claude-Code (Opus 4.8, 2026-07-07)
 **Did:** Finished the last two backlog features with tests + browser debug. (1)
 **Durable HITL** — the resume registry is now DB-backed: a new `pending_approvals`
