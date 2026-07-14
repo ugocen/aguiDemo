@@ -1,5 +1,9 @@
 # AG-UI Demo
 
+> ⚠️ **Reference only.** This is a design predecessor; the canonical project is
+> `agui_demo1/Phase0`. See [REFERENCE-ONLY.md](REFERENCE-ONLY.md) before reusing
+> anything here (especially the `.claude`/`.agents` tooling).
+
 A small, Claude-like AI assistant workspace built to exercise the **AG-UI
 protocol** end to end. AG-UI (Agent-User Interaction Protocol) is an open,
 event-based protocol: the backend streams typed JSON events (lifecycle, text,
